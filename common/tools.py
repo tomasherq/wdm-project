@@ -12,3 +12,7 @@ def getCollection(database, collection):
     collection = database[collection]
 
     return collection
+
+
+def getAmountOfItems(collection):
+    return len(list(collection.find({})))

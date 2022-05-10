@@ -14,18 +14,22 @@ app = Flask("order-service")
 
 collection = getCollection("orders", "order")
 
+collection.drop()
+
 
 @app.post('/create/<user_id>')
 def create_order(user_id):
 
-    order_id = len(list(collection.find({})))
+    order_id = str(getAmountOfItems(collection))
     collection.insert_one({"order_id": order_id, "name": user_id, "address": "Highway 37"})
     return response(200, f"Correctly added, orderid {order_id}")
 
 
 @app.delete('/remove/<order_id>')
 def remove_order(order_id):
-    pass
+
+    collection.delete_one({"order_id": order_id})
+    return response(200, f"Correctly deleted, orderid {order_id}")
 
 
 @app.post('/addItem/<order_id>/<item_id>')
@@ -39,9 +43,12 @@ def remove_item(order_id, item_id):
 
 
 @app.get('/find/<order_id>')
-def find_order(order_id):
-    order_id = int(order_id)
-    return response(200, collection.find_one({"order_id": order_id}, {"_id": 0}))
+def find_order(order_id: str):
+    result = collection.find_one({"order_id": order_id}, {"_id": 0})
+    if result == None:
+        return response(404, "Order not found")
+
+    return response(200, result)
 
 
 @ app.post('/checkout/<order_id>')
