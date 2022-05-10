@@ -1,5 +1,7 @@
 from pymongo import MongoClient
 
+# https://www.w3schools.com/python/python_mongodb_getstarted.asp
+
 myclient = MongoClient('localhost', 27017)
 
 # Select the database to be used
