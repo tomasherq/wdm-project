@@ -55,3 +55,6 @@ def remove_stock(item_id: str, amount: int):
 
     collection.update_one(query, newvalues)
     return response(200, "Stock substracted")
+
+
+app.run(port=2802)
