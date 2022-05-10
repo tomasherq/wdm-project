@@ -14,7 +14,7 @@ collection = getCollection("items", "stock")
 @app.post('/item/create/<price>')
 def create_item(price: int):
     item_id = str(getAmountOfItems(collection))
-    collection.insert({"item_id": item_id, "price": price, "stock": 0})
+    collection.insert_one({"item_id": item_id, "price": price, "stock": 0})
 
     return response(200, item_id)
 
@@ -33,6 +33,9 @@ def add_stock(item_id: str, amount: int):
     if collection.find_one({"item_id": item_id}, {"_id": 0}) == None:
         return response(404, "Item not found")
 
+    if amount < 0:
+        return response(400, "Invalid amount")
+
     query = {"item_id": item_id, }
     newvalues = {"$set": {"stock": amount}}
 
@@ -40,18 +43,25 @@ def add_stock(item_id: str, amount: int):
     return response(200, "Updated")
 
 
-@app.post('/subtract/<item_id>/<amount>')
+@app.post('/subtract/<item_id>/<int:amount>')
 def remove_stock(item_id: str, amount: int):
 
-    data_object = collection.find_one({"item_id": item_id}, {"amount": 1})
+    data_object = collection.find_one({"item_id": item_id})
+    print("DASDASD")
+    print(data_object)
+
     if data_object == None:
         return response(404, "Item not found")
 
-    if data_object["amount"] < amount:
+    stock = int(data_object["stock"])
+    if stock < amount:
         return response(401, "Not enough stock")
 
+    if amount < 0:
+        return response(400, "Invalid amount")
+
     query = {"item_id": item_id, }
-    newvalues = {"$set": {"stock": data_object["amount"]-amount}}
+    newvalues = {"$set": {"stock": stock-amount}}
 
     collection.update_one(query, newvalues)
     return response(200, "Stock substracted")
