@@ -1,11 +1,12 @@
+import base64
 from pymongo import MongoClient
 import json
 import os
 from dotenv import load_dotenv
 load_dotenv('env/mongo.env')
 
+
 PASSWORD = os.environ.get('MONGO_PASSWORD')
-print(PASSWORD)
 
 
 def response(code, text):
@@ -23,3 +24,12 @@ def getCollection(database, collection):
 
 def getAmountOfItems(collection):
     return len(list(collection.find({})))
+
+
+def encodeBase64(string):
+    encodedBytes = base64.b64encode(string.encode("utf-8"))
+    return str(encodedBytes, "utf-8")
+
+
+def decodeBase64(string):
+    return base64.b64decode(string)
