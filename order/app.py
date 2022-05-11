@@ -85,7 +85,15 @@ def find_order(order_id: str):
 
 @ app.post('/checkout/<order_id>')
 def checkout(order_id):
-    pass
+    result = get_order(order_id)
+
+    items = encodeBase64(json.dumps(result["items"]))
+    url = f"http://localhost:8888/substract_multiple/{items}"
+    print("HOLA")
+    stockInfo = requests.post(url)
+    stock = int(json.loads(stockInfo.text)["message"])
+
+    return response(200, "tst")
 
 
 app.run(port=2801)

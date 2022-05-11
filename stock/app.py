@@ -1,8 +1,11 @@
 from flask import Flask
 import os
 import sys
+import base64
+
 
 sys.path.insert(1, os.getcwd())
+print(sys.path)
 if True:
     from common.tools import *
 
@@ -32,7 +35,7 @@ def find_item(item_id: str):
     return response(200, result)
 
 
-@app.post('/add/<item_id>/<amount>')
+@app.post('/add/<item_id>/<int:amount>')
 def add_stock(item_id: str, amount: int):
 
     if get_item(item_id) == None:
@@ -68,6 +71,24 @@ def remove_stock(item_id: str, amount: int):
 
     collection.update_one(query, newvalues)
     return response(200, "Stock substracted")
+
+
+@app.post('/substract_multiple/<items_json>')
+def remove_multiple_stock(items_json: str):
+    print(decodeBase64(items_json))
+    items = []
+    try:
+        items = json.loads(items_json)
+    except:
+        return response(500, "Invalid format")
+
+    print("YES=")
+
+    items_data = collection.find({"item_id": items.keys()})
+    print(items_data)
+    # for item in items:
+    #     query = {"item_id": item_id, }
+    #     newvalues = {"$set": {"stock": stock-amount}}
 
 
 @app.post("/check_availability/<item_id>")
