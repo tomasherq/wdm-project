@@ -11,6 +11,10 @@ app = Flask("stock-service")
 collection = getCollection("items", "stock")
 
 
+def get_item(item_id):
+    return collection.find_one({"item_id": item_id}, {"_id": 0})
+
+
 @app.post('/item/create/<price>')
 def create_item(price: int):
     item_id = str(getAmountOfItems(collection))
@@ -30,7 +34,8 @@ def find_item(item_id: str):
 
 @app.post('/add/<item_id>/<amount>')
 def add_stock(item_id: str, amount: int):
-    if collection.find_one({"item_id": item_id}, {"_id": 0}) == None:
+
+    if get_item(item_id) == None:
         return response(404, "Item not found")
 
     if amount < 0:
@@ -47,8 +52,6 @@ def add_stock(item_id: str, amount: int):
 def remove_stock(item_id: str, amount: int):
 
     data_object = collection.find_one({"item_id": item_id})
-    print("DASDASD")
-    print(data_object)
 
     if data_object == None:
         return response(404, "Item not found")
@@ -67,4 +70,13 @@ def remove_stock(item_id: str, amount: int):
     return response(200, "Stock substracted")
 
 
-app.run(port=2802)
+@app.post("/check_availability/<item_id>")
+def check_availability(item_id: str):
+    result = collection.find_one({"item_id": item_id}, {"_id": 0})
+    if result == None:
+        return response(404, "Item not found")
+
+    return response(200, result["stock"])
+
+
+app.run(port=8888)
