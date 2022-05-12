@@ -14,6 +14,9 @@ if True:
 
 app = Flask("order-service")
 
+STOCK_URL = "http://localhost:8888"
+PAY_URL = "http://localhost:1102"
+
 orderCollection = getCollection("orders", "order")
 
 
@@ -90,8 +93,19 @@ def find_order(order_id: str):
 def checkout(order_id):
     result = get_order(order_id)
 
+    if result["paid"]:
+        return response(402, "Order already paid")
+
+    # This is to have the order done!
+    url = f'{PAY_URL}/pay/{result["user"]}/{order_id}/{result["total_cost"]}'
+    pay_info = requests.post(url)
+    pay_status = json.loads(pay_info.text)["status"]
+
+    if pay_status != 200:
+        return response(401, "Not enough money")
+
     items = encodeBase64(json.dumps(result["items"]))
-    url = f"http://localhost:8888/substract_multiple/{items}"
+    url = f"{STOCK_URL}/substract_multiple/{items}"
 
     # Remove the stock
     stock_info = requests.post(url)
@@ -99,11 +113,15 @@ def checkout(order_id):
 
     if stock_status != 200:
         # Reimburse payment
+        url = f'{PAY_URL}/add_funds/{result["user"]}/{result["total_cost"]}'
+        pay_info = requests.post(url)
 
         return response(501, "Not enough stock for the request")
-        pass
 
-    return response(200, "tst")
+    newvalues = {"$set": {"paid": True}}
+    orderCollection.update_one({"order_id": order_id}, newvalues)
+
+    return response(200, "Order successful")
 
 
 app.run(port=2801)
