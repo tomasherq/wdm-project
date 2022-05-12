@@ -9,8 +9,9 @@ if True:
     from common.tools import *
 
 
-# I want to have the address and port of the clients
+# Each one of the services will run an instance, run in a different port and have different clients
 
+# I want to have the address and port of the clients.
 clientsDirections = ["http://localhost:2801"]
 
 

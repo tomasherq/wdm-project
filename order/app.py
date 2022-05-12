@@ -9,10 +9,13 @@ sys.path.insert(1, os.getcwd())
 if True:
     from common.tools import *
 
+# I want to make the API directions variables accessible by every service!
+
 
 app = Flask("order-service")
 
 orderCollection = getCollection("orders", "order")
+
 
 # Change the field _id to be the order_id and so
 
@@ -47,12 +50,12 @@ def add_item(order_id, item_id):
         return response(404, "Order not found")
 
     url = f"http://localhost:8888/check_availability/{item_id}"
-    stockInfo = requests.post(url)
-    stock = int(json.loads(stockInfo.text)["message"])
-    if stock == 0:
+    item_info = requests.post(url)
+    item = json.loads(item_info.text)["message"]
+    if item[0] == 0:
         return response(404, "No stock available")
 
-    newvalues = {"$set": {"items": order["items"]+[item_id]}}
+    newvalues = {"$set": {"items": order["items"]+[item_id], "total_cost": order["total_cost"]+item[1]}}
 
     orderCollection.update_one({"order_id": order_id}, newvalues)
 
@@ -89,9 +92,16 @@ def checkout(order_id):
 
     items = encodeBase64(json.dumps(result["items"]))
     url = f"http://localhost:8888/substract_multiple/{items}"
-    print("HOLA")
-    stockInfo = requests.post(url)
-    stock = int(json.loads(stockInfo.text)["message"])
+
+    # Remove the stock
+    stock_info = requests.post(url)
+    stock_status = json.loads(stock_info.text)["status"]
+
+    if stock_status != 200:
+        # Reimburse payment
+
+        return response(501, "Not enough stock for the request")
+        pass
 
     return response(200, "tst")
 
