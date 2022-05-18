@@ -1,18 +1,15 @@
 import requests
+from common.tools import *
 from flask import Flask, request
 import sys
 import os
 
 app = Flask("order-service")
-sys.path.insert(1, os.getcwd())
-if True:
-    from common.tools import *
-
 
 # Each one of the services will run an instance, run in a different port and have different clients
 
 # I want to have the address and port of the clients.
-clientsDirections = ["http://localhost:2801"]
+clientsDirections = ["http://192.168.124.10:2801"]
 
 
 @app.route('/', defaults={'path': ''})
@@ -40,4 +37,5 @@ def catch_all(path):
         return response(501, f"Server error occured")
 
 
-app.run(port=2802)
+app.run(host="192.168.124.11", port=2802)
+

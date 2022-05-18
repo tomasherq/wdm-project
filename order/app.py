@@ -1,21 +1,16 @@
-
-
+from common.tools import *
 from flask import Flask
 import sys
 import os
 import requests
-
-sys.path.insert(1, os.getcwd())
-if True:
-    from common.tools import *
 
 # I want to make the API directions variables accessible by every service!
 
 
 app = Flask("order-service")
 
-STOCK_URL = "http://localhost:8888"
-PAY_URL = "http://localhost:1102"
+STOCK_URL = "http://192.168.124.20:8888"
+PAY_URL = "http://192.168.124.15:1102"
 
 orderCollection = getCollection("orders", "order")
 
@@ -26,6 +21,9 @@ orderCollection = getCollection("orders", "order")
 def get_order(order_id):
     return orderCollection.find_one({"order_id": order_id}, {"_id": 0})
 
+@app.route('/')
+def ping_service():
+    return 'Hello, I am ping service!'
 
 @app.post('/create/<user_id>')
 def create_order(user_id):
@@ -52,7 +50,7 @@ def add_item(order_id, item_id):
     if order == None:
         return response(404, "Order not found")
 
-    url = f"http://localhost:8888/check_availability/{item_id}"
+    url = f"http://192.168.124.20:8888/check_availability/{item_id}"
     item_info = requests.post(url)
     item = json.loads(item_info.text)["message"]
     if item[0] == 0:
@@ -89,7 +87,7 @@ def find_order(order_id: str):
     return response(200, result)
 
 
-@ app.post('/checkout/<order_id>')
+@app.post('/checkout/<order_id>')
 def checkout(order_id):
     result = get_order(order_id)
 
@@ -124,4 +122,4 @@ def checkout(order_id):
     return response(200, "Order successful")
 
 
-app.run(port=2801)
+app.run(host="192.168.124.10", port=2801)

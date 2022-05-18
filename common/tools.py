@@ -5,10 +5,10 @@ import os
 from dotenv import load_dotenv
 load_dotenv('env/mongo.env')
 
-
+# test if sync works
 PASSWORD = os.environ.get('MONGO_PASSWORD')
 
-
+# test if sync works from pc to container
 def response(code, text):
     return json.dumps({"status": code, "message": text})
 

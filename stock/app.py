@@ -1,12 +1,8 @@
 from flask import Flask
+from common.tools import *
 import os
 import sys
 import base64
-
-
-sys.path.insert(1, os.getcwd())
-if True:
-    from common.tools import *
 
 
 app = Flask("stock-service")
@@ -104,4 +100,4 @@ def check_availability(item_id: str):
     return response(200, (result["stock"], result["price"]))
 
 
-app.run(port=8888)
+app.run(host="192.168.124.20", port=8888)

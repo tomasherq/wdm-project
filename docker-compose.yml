@@ -1,43 +1,98 @@
 version: "3"
 services:
-    gateway:
-        image: nginx:latest
-        volumes:
-            - ./gateway_nginx.conf:/etc/nginx/nginx.conf:ro
-        ports:
-            - "8000:80"
-
-    order-service:
-        build: ./order
-        image: order:latest
-        environment:
-            - GATEWAY_URL=http://gateway:80
-        command: gunicorn -b 0.0.0.0:5000 app:app
-        env_file:
-            - env/order_redis.env
-
-    order-db:
-        image: redis:latest
-        command: redis-server --requirepass redis --maxmemory 512mb
-
-    stock-service:
-        build: ./stock
-        image: stock:latest
-        command: gunicorn -b 0.0.0.0:5000 app:app
-        env_file:
-            - env/stock_redis.env
-
-    stock-db:
-        image: redis:latest
-        command: redis-server --requirepass redis --maxmemory 512mb
-
-    payment-service:
-        build: ./payment
-        image: user:latest
-        command: gunicorn -b 0.0.0.0:5000 app:app
-        env_file:
-            - env/payment_redis.env
-
-    payment-db:
-        image: redis:latest
-        command: redis-server --requirepass redis --maxmemory 512mb
+  order-service:
+    container_name: order-db
+    hostname: order-service
+    working_dir: /app
+    build: 
+      context: .
+      dockerfile: Mongo.Dockerfile
+    image: order-db
+    environment:
+      - MONGO_PASSWORD=eimaiandras
+    volumes:
+      - ./order:/app/order
+      - ./common:/app/order/common
+    command: bash -c "pip3 install -r order/common/requirements.txt && tail -f /dev/null"
+    ports:
+      - 2801:2801
+      - 27017:27017
+      - 8888:8888
+      - 1102:1102
+    networks:
+      shared_net:
+        ipv4_address: 192.168.124.10
+  
+  payment-service:
+    container_name: payment-db
+    hostname: payment-service
+    working_dir: /app
+    build: 
+      context: .
+      dockerfile: Mongo.Dockerfile
+    image: payment-db
+    environment:
+      - MONGO_PASSWORD=eimaiandras
+    volumes:
+      - ./payment:/app/payment
+      - ./common:/app/payment/common
+    command: bash -c "pip3 install -r payment/common/requirements.txt && tail -f /dev/null"
+    ports:
+      - 2802:2801
+      - 27018:27017
+      - 8001:8888
+      - 1101:1102
+    networks:
+      shared_net:
+        ipv4_address: 192.168.124.15
+      
+  stock-service:
+    container_name: stock-db
+    hostname: stock-service
+    working_dir: /app
+    build: 
+      context: .
+      dockerfile: Mongo.Dockerfile
+    image: stock-db
+    environment:
+      - MONGO_PASSWORD=eimaiandras
+    volumes:
+      - ./stock:/app/stock
+      - ./common:/app/stock/common
+    command: bash -c "pip3 install -r stock/common/requirements.txt && tail -f /dev/null"
+    ports:
+      - 2800:2801
+      - 27019:27017
+      - 8000:8888
+      - 1100:1102
+    networks:
+      shared_net:
+        ipv4_address: 192.168.124.20
+        
+          
+  order-coordinator:
+    container_name: order-coordinator
+    hostname: order-coordinator
+    working_dir: /app
+    build: 
+      context: .
+      dockerfile: coordinator.Dockerfile
+    image: order-coordinator
+    volumes:
+      - ./coordinator:/app/coordinator
+      - ./common:/app/coordinator/common
+    command: bash -c "pip3 install -r coordinator/common/requirements.txt && tail -f /dev/null"
+    ports:
+      - 2803:2801
+      - 27020:27017
+      - 8010:8888
+      - 1110:1102
+    networks:
+      shared_net:
+        ipv4_address: 192.168.124.11      
+networks:
+  shared_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.124.0/24
