@@ -1,43 +1,98 @@
 version: "3"
 services:
-    gateway:
-        image: nginx:latest
-        volumes:
-            - ./gateway_nginx.conf:/etc/nginx/nginx.conf:ro
-        ports:
-            - "8000:80"
-
     order-service:
-        build: ./order
-        image: order:latest
+        container_name: order-db
+        hostname: order-service
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: Mongo.Dockerfile
+        image: order-db
+        env_file:
+            - env/mongo.env
+            - env/addresses.env
+
         environment:
-            - GATEWAY_URL=http://gateway:80
-        command: gunicorn -b 0.0.0.0:5000 app:app
+            - IP_ADDRESS=192.168.124.10
+        volumes:
+            - ./order:/app/order
+            - ./common:/app/order/common
+        command: bash -c "cd order/common/ && bash execution.sh 1"
+        ports:
+            - 1102:2801
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.10
+
+    order-coordinator:
+        container_name: order-coordinator
+        hostname: order-coordinator
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: coordinator.Dockerfile
+        image: order-coordinator
         env_file:
-            - env/order_redis.env
+            - env/mongo.env
+            - env/addresses.env
 
-    order-db:
-        image: redis:latest
-        command: redis-server --requirepass redis --maxmemory 512mb
-
-    stock-service:
-        build: ./stock
-        image: stock:latest
-        command: gunicorn -b 0.0.0.0:5000 app:app
-        env_file:
-            - env/stock_redis.env
-
-    stock-db:
-        image: redis:latest
-        command: redis-server --requirepass redis --maxmemory 512mb
+        volumes:
+            - ./coordinator:/app/coordinator
+            - ./common:/app/coordinator/common
+        command: bash -c "cd coordinator/common/ && bash execution.sh 1 ORDERS"
+        ports:
+            - 1103:2801
+            - 8080:2802
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.29
 
     payment-service:
-        build: ./payment
-        image: user:latest
-        command: gunicorn -b 0.0.0.0:5000 app:app
+        container_name: payment-db
+        hostname: payment-service
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: Mongo.Dockerfile
+        image: payment-db
         env_file:
-            - env/payment_redis.env
+            - env/mongo.env
+            - env/addresses.env
 
-    payment-db:
-        image: redis:latest
-        command: redis-server --requirepass redis --maxmemory 512mb
+        volumes:
+            - ./payment:/app/payment
+            - ./common:/app/payment/common
+        command: bash -c "cd payment/common/ && bash execution.sh 1"
+        ports:
+            - 1104:2801
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.30
+
+    stock-service:
+        container_name: stock-db
+        hostname: stock-service
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: Mongo.Dockerfile
+        image: stock-db
+        env_file:
+            - env/mongo.env
+            - env/addresses.env
+        volumes:
+            - ./stock:/app/stock
+            - ./common:/app/stock/common
+        command: bash -c "cd stock/common/ && bash execution.sh 1"
+        ports:
+            - 1105:2801
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.50
+
+networks:
+    shared_net:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 192.168.124.0/24

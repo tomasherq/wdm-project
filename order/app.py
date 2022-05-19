@@ -1,13 +1,8 @@
-
-
+from common.tools import *
 from flask import Flask
 import sys
 import os
 import requests
-
-sys.path.insert(1, os.getcwd())
-if True:
-    from common.tools import *
 
 # I want to make the API directions variables accessible by every service!
 # Keep loggin of the files
@@ -15,16 +10,23 @@ if True:
 
 app = Flask("order-service")
 
-STOCK_URL = "http://localhost:8888"
-PAY_URL = "http://localhost:1102"
+STOCK_URL = "http://192.168.124.20:8888"
+PAY_URL = "http://192.168.124.15:1102"
 
 orderCollection = getCollection("orders", "order")
+coordinators = getAddresses("ORDERS_COORD_ADDRESS")
 
 
 # Change the field _id to be the order_id and so
 
 def get_order(order_id):
     return orderCollection.find_one({"order_id": order_id}, {"_id": 0})
+
+
+@app.route('/')
+def ping_service():
+    MA = os.environ.get('ORDERS_NODES_ADDRESS')
+    return f'Hello, I am ping service!'
 
 
 @app.post('/create/<user_id>')
@@ -52,7 +54,7 @@ def add_item(order_id, item_id):
     if order == None:
         return response(404, "Order not found")
 
-    url = f"http://localhost:8888/check_availability/{item_id}"
+    url = f"http://192.168.124.20:8888/check_availability/{item_id}"
     item_info = requests.post(url)
     item = json.loads(item_info.text)["message"]
     if item[0] == 0:
@@ -91,7 +93,7 @@ def find_order(order_id: str):
 # The services should only talk with their coordinator to prevent inconsistency
 
 
-@ app.post('/checkout/<order_id>')
+@app.post('/checkout/<order_id>')
 def checkout(order_id):
     result = get_order(order_id)
 
@@ -126,4 +128,4 @@ def checkout(order_id):
     return response(200, "Order successful")
 
 
-app.run(port=2801)
+app.run(host=getIPAddress("ORDERS_NODES_ADDRESS"), port=2801)

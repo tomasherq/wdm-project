@@ -2,20 +2,18 @@ import os
 import atexit
 
 from flask import Flask
+from common.tools import *
 import sys
 
 import requests
 
-
-sys.path.insert(1, os.getcwd())
-if True:
-    from common.tools import *
 
 app = Flask("payment-service")
 
 collection = getCollection("users", "user")
 
 collection.drop()
+coordinators = getAddresses("PAYMENT_COORD_ADDRESS")
 
 
 def helper_find_user(user_id):
@@ -26,7 +24,7 @@ def helper_find_user(user_id):
 
 
 def helper_find_order(order_id):
-    url = f"http://localhost:2801/find/{order_id}"
+    url = f"http://192.168.124.10:2801/find/{order_id}"
     orderInfo = requests.get(url)
     code = json.loads(orderInfo.text)["status"]
     if code == 404:
@@ -108,4 +106,4 @@ def payment_status(user_id: str, order_id: str):
     return response(200, f"Order status: {order_status}")
 
 
-app.run(port=1102)
+app.run(host=getIPAddress("PAYMENT_NODES_ADDRESS"), port=2801)

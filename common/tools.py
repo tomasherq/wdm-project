@@ -2,11 +2,12 @@ import base64
 from pymongo import MongoClient
 import json
 import os
-from dotenv import load_dotenv
-load_dotenv('env/mongo.env')
+import sys
 
-
+# test if sync works
 PASSWORD = os.environ.get('MONGO_PASSWORD')
+PREFIX_IP = os.environ.get("PREFIX_IP")
+# test if sync works from pc to container
 
 
 def response(code, text):
@@ -33,3 +34,16 @@ def encodeBase64(string):
 
 def decodeBase64(string):
     return base64.b64decode(string)
+
+
+def getIPAddress(service):
+    ID_NODE = int(sys.argv[1])-1
+
+    return PREFIX_IP+"."+os.environ.get(service).split(";")[ID_NODE]
+
+
+def getAddresses(service):
+    addresses = list()
+    for address in +os.environ.get(service).split(";"):
+        addresses.append(f'http://{PREFIX_IP}.{address}:2801')
+    return addresses

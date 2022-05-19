@@ -1,16 +1,13 @@
 from flask import Flask
+from common.tools import *
 import os
 import sys
 import base64
 
 
-sys.path.insert(1, os.getcwd())
-if True:
-    from common.tools import *
-
-
 app = Flask("stock-service")
 collection = getCollection("items", "stock")
+coordinators = getAddresses("STOCK_COORD_ADDRESS")
 
 
 def get_item(item_id):
@@ -104,4 +101,4 @@ def check_availability(item_id: str):
     return response(200, (result["stock"], result["price"]))
 
 
-app.run(port=8888)
+app.run(host=getIPAddress("STOCK_NODES_ADDRESS"), port=2801)
