@@ -10,6 +10,7 @@ if True:
     from common.tools import *
 
 # I want to make the API directions variables accessible by every service!
+# Keep loggin of the files
 
 
 app = Flask("order-service")
@@ -21,7 +22,6 @@ orderCollection = getCollection("orders", "order")
 
 
 # Change the field _id to be the order_id and so
-
 
 def get_order(order_id):
     return orderCollection.find_one({"order_id": order_id}, {"_id": 0})
@@ -87,6 +87,8 @@ def find_order(order_id: str):
         return response(404, "Order not found")
 
     return response(200, result)
+
+# The services should only talk with their coordinator to prevent inconsistency
 
 
 @ app.post('/checkout/<order_id>')

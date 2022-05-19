@@ -88,7 +88,7 @@ def remove_multiple_stock(items_json: str):
         if json.loads(result)["status"] != 200:
             for deleted_item in deleted_items:
                 add_stock(deleted_item, amount)
-            return response(300, "No stock")
+            return response(400, "No stock")
         else:
             deleted_items.append(item)
 

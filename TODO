@@ -1,0 +1,13 @@
+Create docker image for each service:
+    - Customizable Port
+    - Own database per node
+    - Install requirements
+
+Docker-compose:
+    - Define the services (several nodes)
+
+Coordinator:
+    - Implement load balancing algorithm
+    - Two phase commit algorithm (SAGAS)
+    - Replication system
+    - Hash algorithm
