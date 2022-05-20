@@ -1,7 +1,7 @@
 from common.tools import *
 
 
-app = Flask("stock-service")
+app = Flask(f"stock-service-{ID_NODE}")
 collection = getCollection("items", "stock")
 coordinators = getAddresses("STOCK_COORD_ADDRESS")
 

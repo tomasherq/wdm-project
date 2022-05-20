@@ -1,13 +1,16 @@
 from common.tools import *
 
-
-app = Flask("order-service")
+serviceID = sys.argv[2]
+app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
 
 # Each one of the services will run an instance, run in a different port and have different clients
 
 # I want to have the address and port of the clients.
 
-serviceID = sys.argv[2]
+
+@app.route('/ping')
+def ping_service():
+    return f'Hello, I am ping service!'
 
 
 @app.route('/', defaults={'path': ''})
@@ -15,6 +18,11 @@ serviceID = sys.argv[2]
 def catch_all(path):
 
     nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
+
+    ip_addr = request.remote_addr
+
+    if ip_addr in nodesDirections:
+        return response(403, "Not authorized.")
 
     responses = []
     for nodeDir in nodesDirections:

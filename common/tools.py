@@ -10,6 +10,8 @@ from ipv4checksum import checksum
 # test if sync works
 PASSWORD = os.environ.get('MONGO_PASSWORD')
 PREFIX_IP = os.environ.get("PREFIX_IP")
+ID_NODE = int(sys.argv[1])
+
 # test if sync works from pc to container
 
 
@@ -40,14 +42,13 @@ def decodeBase64(string):
 
 
 def getIPAddress(service):
-    ID_NODE = int(sys.argv[1])-1
 
-    return PREFIX_IP+"."+os.environ.get(service).split(";")[ID_NODE]
+    return PREFIX_IP+"."+os.environ.get(service).split(";")[ID_NODE-1]
 
 
 def getAddresses(service):
     addresses = list()
-    for address in +os.environ.get(service).split(";"):
+    for address in os.environ.get(service).split(";"):
         addresses.append(f'http://{PREFIX_IP}.{address}:2801')
     return addresses
 

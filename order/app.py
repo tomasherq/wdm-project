@@ -4,13 +4,11 @@ from common.tools import *
 # Keep loggin of the files
 
 
-app = Flask("order-service")
+app = Flask(f"order-service-{ID_NODE}")
 
-STOCK_URL = "http://192.168.124.20:8888"
-PAY_URL = "http://192.168.124.15:1102"
 
 orderCollection = getCollection("orders", "order")
-coordinators = getAddresses("ORDERS_COORD_ADDRESS")
+coordinators = getAddresses("ORDER_COORD_ADDRESS")
 
 
 # Change the field _id to be the order_id and so
@@ -21,7 +19,6 @@ def get_order(order_id):
 
 @app.route('/')
 def ping_service():
-    MA = os.environ.get('ORDERS_NODES_ADDRESS')
     return f'Hello, I am ping service!'
 
 
@@ -72,6 +69,7 @@ def add_item(order_id, item_id):
 @app.delete('/removeItem/<order_id>/<item_id>')
 def remove_item(order_id, item_id):
     order = get_order(order_id)
+
     if order == None:
         return response(404, "Order not found")
     if item_id not in order["items"]:
@@ -103,24 +101,27 @@ def checkout(order_id):
         return response(402, "Order already paid")
 
     # This is to have the order done!
-    url = f'{PAY_URL}/pay/{result["user"]}/{order_id}/{result["total_cost"]}'
-    pay_info = requests.post(url)
+    info = {"url": f'/pay/{result["user"]}/{order_id}/{result["total_cost"]}', "service": "payment"}
+
+    pay_info = sendMessageCoordinator(info, coordinators)
+
     pay_status = json.loads(pay_info.text)["status"]
 
     if pay_status != 200:
         return response(401, "Not enough money")
 
     items = encodeBase64(json.dumps(result["items"]))
-    url = f"{STOCK_URL}/substract_multiple/{items}"
+
+    info = {"url": f'/substract_multiple/{items}', "service": "stock"}
 
     # Remove the stock
-    stock_info = requests.post(url)
+    stock_info = sendMessageCoordinator(info, coordinators)
     stock_status = json.loads(stock_info.text)["status"]
 
     if stock_status != 200:
         # Reimburse payment
-        url = f'{PAY_URL}/add_funds/{result["user"]}/{result["total_cost"]}'
-        pay_info = requests.post(url)
+        info = {"url": f'/add_funds/{result["user"]}/{result["total_cost"]}', "service": "payment"}
+        pay_info = sendMessageCoordinator(info, coordinators)
 
         return response(501, "Not enough stock for the request")
 
@@ -130,4 +131,4 @@ def checkout(order_id):
     return response(200, "Order successful")
 
 
-app.run(host=getIPAddress("ORDERS_NODES_ADDRESS"), port=2801)
+app.run(host=getIPAddress("ORDER_NODES_ADDRESS"), port=2801)
