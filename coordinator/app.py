@@ -1,8 +1,5 @@
-import requests
 from common.tools import *
-from flask import Flask, request
-import sys
-import os
+
 
 app = Flask("order-service")
 

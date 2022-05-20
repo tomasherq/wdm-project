@@ -1,11 +1,4 @@
-import os
-import atexit
-
-from flask import Flask
 from common.tools import *
-import sys
-
-import requests
 
 
 app = Flask("payment-service")

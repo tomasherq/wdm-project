@@ -1,8 +1,4 @@
-from flask import Flask
 from common.tools import *
-import os
-import sys
-import base64
 
 
 app = Flask("stock-service")

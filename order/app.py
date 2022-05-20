@@ -1,8 +1,4 @@
 from common.tools import *
-from flask import Flask
-import sys
-import os
-import requests
 
 # I want to make the API directions variables accessible by every service!
 # Keep loggin of the files
@@ -31,7 +27,10 @@ def ping_service():
 
 @app.post('/create/<user_id>')
 def create_order(user_id):
+    # Maybe add security? --> I want an ngnix rather than this crap
 
+    if not checkAccess(request, coordinators):
+        return response(403, f"Access restricted")
     order_id = str(getAmountOfItems(orderCollection))
     orderCollection.insert_one({"order_id": order_id, "paid": False, "items": [], "user": user_id, "total_cost": 0})
     return response(200, f"Correctly added, orderid {order_id}")
@@ -39,7 +38,8 @@ def create_order(user_id):
 
 @app.delete('/remove/<order_id>')
 def remove_order(order_id):
-
+    if not checkAccess(request, coordinators):
+        return response(403, f"Access restricted")
     if get_order(order_id) == None:
         return response(404, "Order not found")
 
@@ -54,8 +54,10 @@ def add_item(order_id, item_id):
     if order == None:
         return response(404, "Order not found")
 
-    url = f"http://192.168.124.20:8888/check_availability/{item_id}"
-    item_info = requests.post(url)
+    info = {"url": f"/check_availability/{item_id}", "service": "payment"}
+
+    item_info = sendMessageCoordinator(info, coordinators)
+
     item = json.loads(item_info.text)["message"]
     if item[0] == 0:
         return response(404, "No stock available")

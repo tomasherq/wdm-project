@@ -3,7 +3,10 @@ from pymongo import MongoClient
 import json
 import os
 import sys
-
+import requests
+import math
+from flask import Flask, request
+from ipv4checksum import checksum
 # test if sync works
 PASSWORD = os.environ.get('MONGO_PASSWORD')
 PREFIX_IP = os.environ.get("PREFIX_IP")
@@ -47,3 +50,38 @@ def getAddresses(service):
     for address in +os.environ.get(service).split(";"):
         addresses.append(f'http://{PREFIX_IP}.{address}:2801')
     return addresses
+
+
+def getIndexFromCheck(nNodes, numberCheck):
+
+    if nNodes == 1:
+        return 1
+
+    nDigits = int(math.log(nNodes, 10))+1
+
+    numberCheck = str(numberCheck)
+
+    while len(numberCheck) < nDigits:
+        numberCheck = numberCheck+numberCheck
+
+    number = int(str(numberCheck)[:nDigits])
+    while number > nNodes:
+        number -= nNodes
+
+    return number
+
+
+def sendMessageCoordinator(info, coordinators):
+    json_info = json.dumps(info)
+
+    idInfo = checksum(json_info)
+    info["id"] = idInfo
+    infoEncoded = encodeBase64(json.dumps(info))
+    coordinatorIP = coordinators[getIndexFromCheck(len(coordinators), idInfo)]
+    url = f'http://{coordinatorIP}:2802/{infoEncoded}'
+
+    return requests.post(url)
+
+
+def checkAccess(request, allowedAddresses):
+    return request.remote_addr in allowedAddresses
