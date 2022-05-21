@@ -1,43 +1,131 @@
-version: "3"
+version: '3'
 services:
-    gateway:
-        image: nginx:latest
+    order-nodes-1:
+        container_name: order-nodes-1
+        hostname: order-nodes-1
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: Mongo.Dockerfile
+        image: order-nodes-1
+        env_file:
+        - env/mongo.env
+        - env/addresses.env
         volumes:
-            - ./gateway_nginx.conf:/etc/nginx/nginx.conf:ro
+        - ./order:/app/order
+        - ./common:/app/order/common
+        command: bash -c "cd order/common/ && bash execution.sh 1"
         ports:
-            - "8000:80"
-
-    order-service:
-        build: ./order
-        image: order:latest
-        environment:
-            - GATEWAY_URL=http://gateway:80
-        command: gunicorn -b 0.0.0.0:5000 app:app
+        - 1102:2801
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.10
+    payment-nodes-1:
+        container_name: payment-nodes-1
+        hostname: payment-nodes-1
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: Mongo.Dockerfile
+        image: payment-nodes-1
         env_file:
-            - env/order_redis.env
-
-    order-db:
-        image: redis:latest
-        command: redis-server --requirepass redis --maxmemory 512mb
-
-    stock-service:
-        build: ./stock
-        image: stock:latest
-        command: gunicorn -b 0.0.0.0:5000 app:app
+        - env/mongo.env
+        - env/addresses.env
+        volumes:
+        - ./payment:/app/payment
+        - ./common:/app/payment/common
+        command: bash -c "cd payment/common/ && bash execution.sh 1"
+        ports:
+        - 1103:2801
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.30
+    stock-nodes-1:
+        container_name: stock-nodes-1
+        hostname: stock-nodes-1
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: Mongo.Dockerfile
+        image: stock-nodes-1
         env_file:
-            - env/stock_redis.env
-
-    stock-db:
-        image: redis:latest
-        command: redis-server --requirepass redis --maxmemory 512mb
-
-    payment-service:
-        build: ./payment
-        image: user:latest
-        command: gunicorn -b 0.0.0.0:5000 app:app
+        - env/mongo.env
+        - env/addresses.env
+        volumes:
+        - ./stock:/app/stock
+        - ./common:/app/stock/common
+        command: bash -c "cd stock/common/ && bash execution.sh 1"
+        ports:
+        - 1104:2801
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.50
+    coordinator-order-1:
+        container_name: coordinator-order-1
+        hostname: coordinator-order-1
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: coordinator.Dockerfile
+        image: coordinator-order-1
         env_file:
-            - env/payment_redis.env
-
-    payment-db:
-        image: redis:latest
-        command: redis-server --requirepass redis --maxmemory 512mb
+        - env/mongo.env
+        - env/addresses.env
+        volumes:
+        - ./coordinator:/app/coordinator
+        - ./common:/app/coordinator/common
+        command: bash -c "cd coordinator/common/ && bash execution.sh 1 ORDER"
+        ports:
+        - 1105:2801
+        - 8080:2802
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.21
+    coordinator-payment-1:
+        container_name: coordinator-payment-1
+        hostname: coordinator-payment-1
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: coordinator.Dockerfile
+        image: coordinator-payment-1
+        env_file:
+        - env/mongo.env
+        - env/addresses.env
+        volumes:
+        - ./coordinator:/app/coordinator
+        - ./common:/app/coordinator/common
+        command: bash -c "cd coordinator/common/ && bash execution.sh 1 PAYMENT"
+        ports:
+        - 1106:2801
+        - 8081:2802
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.41
+    coordinator-stock-1:
+        container_name: coordinator-stock-1
+        hostname: coordinator-stock-1
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: coordinator.Dockerfile
+        image: coordinator-stock-1
+        env_file:
+        - env/mongo.env
+        - env/addresses.env
+        volumes:
+        - ./coordinator:/app/coordinator
+        - ./common:/app/coordinator/common
+        command: bash -c "cd coordinator/common/ && bash execution.sh 1 STOCK"
+        ports:
+        - 1107:2801
+        - 8082:2802
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.61
+networks:
+    shared_net:
+        driver: bridge
+        ipam:
+            config:
+            -   subnet: 192.168.124.0/24

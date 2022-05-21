@@ -1,0 +1,15 @@
+
+
+# Make sure coordinator are on
+http://192.168.124.21:2801/ping # Orders
+http://192.168.124.41:2801/ping # Payment
+http://192.168.124.61:2801/ping # Stock
+
+# Start with independent queries
+
+# We start with creating a user
+http://192.168.124.21:2801/create_user
+
+
+
+http://192.168.124.21:2801/find/1

@@ -1,27 +1,32 @@
-import requests
-from flask import Flask, request
-import sys
-import os
+from common.tools import *
 
-app = Flask("order-service")
-sys.path.insert(1, os.getcwd())
-if True:
-    from common.tools import *
-
+serviceID = sys.argv[2]
+app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
 
 # Each one of the services will run an instance, run in a different port and have different clients
 
 # I want to have the address and port of the clients.
-clientsDirections = ["http://localhost:2801"]
+
+
+@app.route('/ping')
+def ping_service():
+    return f'Hello, I am ping service!'
 
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>', methods=['POST', 'GET', 'DELETE'])
 def catch_all(path):
-    print(path)
+
+    nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
+
+    ip_addr = request.remote_addr
+
+    if ip_addr in nodesDirections:
+        return response(403, "Not authorized.")
+
     responses = []
-    for clientDir in clientsDirections:
-        url = f"{clientDir}/{path}"
+    for nodeDir in nodesDirections:
+        url = f"{nodeDir}/{path}"
 
         if request.method == 'POST':
             reply = json.loads(requests.post(url).text)
@@ -40,4 +45,4 @@ def catch_all(path):
         return response(501, f"Server error occured")
 
 
-app.run(port=2802)
+app.run(host=getIPAddress(f"{serviceID}_COORD_ADDRESS"), port=2801)

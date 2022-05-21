@@ -1,22 +1,15 @@
-import os
-import atexit
-
-from flask import Flask
-import sys
-
-import requests
+from common.tools import *
 
 
-sys.path.insert(1, os.getcwd())
-if True:
-    from common.tools import *
-
-app = Flask("payment-service")
+app = Flask(f"payment-service-{ID_NODE}")
 
 collection = getCollection("users", "user")
 
-collection.drop()
+collection.drop()  # This will delete everything you got .... want that?
+coordinators = getAddresses("PAYMENT_COORD_ADDRESS")
 
+
+# TODO:Remove all non used stuff from functions
 
 def helper_find_user(user_id):
     user_object = collection.find_one({"user_id": user_id})
@@ -26,8 +19,11 @@ def helper_find_user(user_id):
 
 
 def helper_find_order(order_id):
-    url = f"http://localhost:2801/find/{order_id}"
-    orderInfo = requests.get(url)
+
+    info = {"url": f"/find/{order_id}", "service": "order"}
+
+    orderInfo = sendMessageCoordinator(info, coordinators)
+
     code = json.loads(orderInfo.text)["status"]
     if code == 404:
         return 404
@@ -108,4 +104,4 @@ def payment_status(user_id: str, order_id: str):
     return response(200, f"Order status: {order_status}")
 
 
-app.run(port=1102)
+app.run(host=getIPAddress("PAYMENT_NODES_ADDRESS"), port=2801)
