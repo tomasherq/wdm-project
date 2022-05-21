@@ -1,4 +1,3 @@
-from platform import node
 from common.tools import *
 
 from collections import defaultdict
