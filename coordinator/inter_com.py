@@ -13,7 +13,7 @@ replies = defaultdict(lambda: {})
 nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
 
 
-@app.post('/request/<str:request_info>', methods=['POST'])
+@app.route('/request/<request_info>')
 def catch_all(request_info):
 
     ip_addr = request.remote_addr
