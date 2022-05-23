@@ -1,11 +1,14 @@
 from common.tools import *
+import sys
+import logging
 
 # I want to make the API directions variables accessible by every service!
 # Keep loggin of the files
 
 
 app = Flask(f"order-service-{ID_NODE}")
-
+logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.INFO,
+                    format=f"%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s")
 
 orderCollection = getCollection("orders", "order")
 coordinators = getAddresses("ORDER_COORD_ADDRESS")
@@ -19,8 +22,8 @@ def get_order(order_id):
 
 @app.route('/')
 def ping_service():
-    print(coordinators)
-    print("HOLASDLASDLASD")
+    print(coordinators, file=sys.stdout, flush=True)
+    print("HOLASDLASDLASD", file=sys.stdout, flush=True)
 
     return json.dumps(coordinators)
 
@@ -31,39 +34,43 @@ def create_order(user_id):
 
     order_id = str(getAmountOfItems(orderCollection))
     orderCollection.insert_one({"order_id": order_id, "paid": False, "items": [], "user": user_id, "total_cost": 0})
+    app.logger.info(f"Created order with orderid: {order_id} and userid: {user_id}.")
     return response(200, f"Correctly added, orderid {order_id}")
 
 
 @app.delete('/remove/<order_id>')
 def remove_order(order_id):
-
     if get_order(order_id) == None:
+        app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, "Order not found")
 
     orderCollection.delete_one({"order_id": order_id})
+    app.logger.info(f"Order with orderid: {order_id} was successfully removed.")
     return response(200, f"Correctly deleted, orderid {order_id}")
 
 
 @app.post('/addItem/<order_id>/<item_id>')
 def add_item(order_id, item_id):
-
     order = get_order(order_id)
     if order == None:
+        app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, "Order not found")
 
-    info = {"url": f"/check_availability/{item_id}", "service": "payment"}
+    info = {"url": f"/check_availability/{item_id}", "service": "stock"}
+    print(coordinators, file=sys.stdout, flush=True)
 
     item_info = sendMessageCoordinator(info, coordinators)
-
+    app.logger.info(f"Sending message to coordinator: {coordinators}")
     item = json.loads(item_info.text)["message"]
     if item[0] == 0:
+        app.logger.error(f"No stock for item with itemid: {item_id}")
         return response(404, "No stock available")
 
-    newvalues = {"$set": {"items": order["items"]+[item_id], "total_cost": order["total_cost"]+item[1]}}
+    newvalues = {"$set": {"items": order["items"] + [item_id], "total_cost": order["total_cost"] + item[1]}}
 
     orderCollection.update_one({"order_id": order_id}, newvalues)
-
-    return response(200, "Succesfully added")
+    app.logger.info(f"Successfully added item with itemid: {item_id} to order with orderid: {order_id}.")
+    return response(200, "Successfully added")
 
 
 @app.delete('/removeItem/<order_id>/<item_id>')
@@ -71,24 +78,28 @@ def remove_item(order_id, item_id):
     order = get_order(order_id)
 
     if order == None:
+        app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, "Order not found")
     if item_id not in order["items"]:
+        app.logger.error(f"Item with itemid: {item_id} was not found.")
         return response(404, "Item not in order")
 
-    newvalues = {"$set": {"items": order["items"]-[item_id]}}
+    newvalues = {"$set": {"items": order["items"] - [item_id]}}
 
     orderCollection.update_one({"order_id": order_id}, newvalues)
-
-    return response(200, "Succesfully removed")
+    app.logger.info(f"Successfully deleted item with itemid: {item_id} from order with orderid: {order_id}.")
+    return response(200, "Successfully removed")
 
 
 @app.get('/find/<order_id>')
 def find_order(order_id: str):
     result = get_order(order_id)
     if result == None:
+        app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, "Order not found")
-
+    app.logger.info(f"Successfully retrieved order with orderid {order_id}.")
     return response(200, result)
+
 
 # The services should only talk with their coordinator to prevent inconsistency
 
@@ -98,16 +109,18 @@ def checkout(order_id):
     result = get_order(order_id)
 
     if result["paid"]:
+        app.logger.error(f"Order with orderid: {order_id} is already paid.")
         return response(402, "Order already paid")
 
     # This is to have the order done!
     info = {"url": f'/pay/{result["user"]}/{order_id}/{result["total_cost"]}', "service": "payment"}
 
     pay_info = sendMessageCoordinator(info, coordinators)
-
+    app.logger.info(f"Sending payment information to coordinators: {coordinators}.")
     pay_status = json.loads(pay_info.text)["status"]
 
     if pay_status != 200:
+        app.logger.error(f"There is not enough money")
         return response(401, "Not enough money")
 
     items = encodeBase64(json.dumps(result["items"]))
@@ -118,16 +131,18 @@ def checkout(order_id):
     stock_info = sendMessageCoordinator(info, coordinators)
     stock_status = json.loads(stock_info.text)["status"]
 
+    app.logger.info(f"Removing items from stock for order with orderid: {order_id}.")
+
     if stock_status != 200:
         # Reimburse payment
         info = {"url": f'/add_funds/{result["user"]}/{result["total_cost"]}', "service": "payment"}
         pay_info = sendMessageCoordinator(info, coordinators)
-
+        app.logger.info(f"Not enough stock! Reimburse payment for order with orderid: {order_id}.")
         return response(501, "Not enough stock for the request")
 
     newvalues = {"$set": {"paid": True}}
     orderCollection.update_one({"order_id": order_id}, newvalues)
-
+    app.logger.info(f"Order with orderid: {order_id} is successfully paid.")
     return response(200, "Order successful")
 
 

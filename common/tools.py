@@ -56,7 +56,7 @@ def getAddresses(service):
 def getIndexFromCheck(nNodes, numberCheck):
 
     if nNodes == 1:
-        return 1
+        return 0
 
     nDigits = int(math.log(nNodes, 10))+1
 
@@ -79,7 +79,9 @@ def sendMessageCoordinator(info, coordinators):
     info["id"] = idInfo
     infoEncoded = encodeBase64(json.dumps(info))
     coordinatorIP = coordinators[getIndexFromCheck(len(coordinators), idInfo)]
-    url = f'http://{coordinatorIP}:2802/{infoEncoded}'
+    print("CoordinatorIP: ", coordinatorIP, flush=True, file=sys.stdout)
+    print("CoordinatorIP split: ", coordinatorIP.rsplit(":", 1)[0], flush=True, file=sys.stdout)
+    url = f'{coordinatorIP.rsplit(":", 1)[0]}:2802/{infoEncoded}'
 
     return requests.post(url)
 

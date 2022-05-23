@@ -45,7 +45,7 @@ def catch_all(request_info):
 
     # We could make them talk directly through this port but it complicates a lot the logic
     url = f'http://{coordinatorsService[getIndexFromCheck(len(nodesDirections),idRequest)]}{requestInfo["url"]}'
-
+    print(url, file=sys.stdout, flush=True)
     replies[idRequest]['content'] = requests.post(url)
 
     return replies[idRequest]['content']
