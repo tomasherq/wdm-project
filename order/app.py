@@ -19,15 +19,16 @@ def get_order(order_id):
 
 @app.route('/')
 def ping_service():
-    return f'Hello, I am ping service!'
+    print(coordinators)
+    print("HOLASDLASDLASD")
+
+    return json.dumps(coordinators)
 
 
 @app.post('/create/<user_id>')
 def create_order(user_id):
     # Maybe add security? --> I want an ngnix rather than this crap
 
-    if not checkAccess(request, coordinators):
-        return response(403, f"Access restricted")
     order_id = str(getAmountOfItems(orderCollection))
     orderCollection.insert_one({"order_id": order_id, "paid": False, "items": [], "user": user_id, "total_cost": 0})
     return response(200, f"Correctly added, orderid {order_id}")
@@ -35,8 +36,7 @@ def create_order(user_id):
 
 @app.delete('/remove/<order_id>')
 def remove_order(order_id):
-    if not checkAccess(request, coordinators):
-        return response(403, f"Access restricted")
+
     if get_order(order_id) == None:
         return response(404, "Order not found")
 
