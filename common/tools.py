@@ -20,9 +20,9 @@ def response(code, text):
 
 
 def getCollection(database, collection):
-    # client = MongoClient("mongodb+srv://user:" + PASSWORD +
-    #                      "@gala.iykme.mongodb.net/myFirstDatabase?retryWrites=true&w=majority", 27017)
-    client = MongoClient("localhost", 27017)
+    client = MongoClient("mongodb+srv://user:" + PASSWORD +
+                         "@gala.iykme.mongodb.net/myFirstDatabase?retryWrites=true&w=majority", 27017)
+    # client = MongoClient("localhost", 27017)
     database = client[database]
     collection = database[collection]
 
