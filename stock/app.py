@@ -3,7 +3,7 @@ from common.tools import *
 
 app = Flask(f"stock-service-{ID_NODE}")
 collection = getCollection("items", "stock")
-coordinators = getAddresses("STOCK_COORD_ADDRESS")
+coordinators = getAddresses("STOCK_COORD_ADDRESS", 2802)
 
 
 def get_item(item_id):

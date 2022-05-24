@@ -11,7 +11,13 @@ logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.
                     format=f"%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s")
 
 orderCollection = getCollection("orders", "order")
-coordinators = getAddresses("ORDER_COORD_ADDRESS")
+coordinators = getAddresses("ORDER_COORD_ADDRESS", 2802)
+
+
+@app.before_request
+def log_request_info():
+    app.logger.debug('Headers: %s', request.headers)
+    app.logger.debug('Body: %s', request.get_data())
 
 
 # Change the field _id to be the order_id and so
@@ -22,8 +28,6 @@ def get_order(order_id):
 
 @app.route('/')
 def ping_service():
-    print(coordinators, file=sys.stdout, flush=True)
-    print("HOLASDLASDLASD", file=sys.stdout, flush=True)
 
     return json.dumps(coordinators)
 
@@ -51,16 +55,17 @@ def remove_order(order_id):
 
 @app.post('/addItem/<order_id>/<item_id>')
 def add_item(order_id, item_id):
+
     order = get_order(order_id)
     if order == None:
         app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, "Order not found")
 
     info = {"url": f"/check_availability/{item_id}", "service": "stock"}
-    print(coordinators, file=sys.stdout, flush=True)
 
     item_info = sendMessageCoordinator(info, coordinators)
     app.logger.info(f"Sending message to coordinator: {coordinators}")
+
     item = json.loads(item_info.text)["message"]
     if item[0] == 0:
         app.logger.error(f"No stock for item with itemid: {item_id}")

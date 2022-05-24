@@ -20,8 +20,9 @@ def response(code, text):
 
 
 def getCollection(database, collection):
-    client = MongoClient("mongodb+srv://user:" + PASSWORD +
-                         "@gala.iykme.mongodb.net/myFirstDatabase?retryWrites=true&w=majority", 27017)
+    # client = MongoClient("mongodb+srv://user:" + PASSWORD +
+    #                      "@gala.iykme.mongodb.net/myFirstDatabase?retryWrites=true&w=majority", 27017)
+    client = MongoClient("localhost", 27017)
     database = client[database]
     collection = database[collection]
 
@@ -46,30 +47,31 @@ def getIPAddress(service):
     return PREFIX_IP+"."+os.environ.get(service).split(";")[ID_NODE-1]
 
 
-def getAddresses(service):
+def getAddresses(service, port=2801):
     addresses = list()
     for address in os.environ.get(service).split(";"):
-        addresses.append(f'http://{PREFIX_IP}.{address}:2801')
+        addresses.append(f'http://{PREFIX_IP}.{address}:{port}')
     return addresses
 
 
-def getIndexFromCheck(nNodes, numberCheck):
+def getIndexFromCheck(nNodes, checkNum):
+    indexMaxNodes = nNodes-1
 
-    if nNodes == 1:
+    if indexMaxNodes == 0:
         return 0
 
     nDigits = int(math.log(nNodes, 10))+1
 
-    numberCheck = str(numberCheck)
+    checkNum = str(checkNum)
 
-    while len(numberCheck) < nDigits:
-        numberCheck = numberCheck+numberCheck
+    while len(checkNum) < nDigits:
+        checkNum = checkNum+checkNum
 
-    number = int(str(numberCheck)[:nDigits])
-    while number > nNodes:
-        number -= nNodes
+    index = int(str(checkNum)[:nDigits])
+    while index > indexMaxNodes:
+        index -= indexMaxNodes
 
-    return number
+    return index
 
 
 def sendMessageCoordinator(info, coordinators):
@@ -78,10 +80,9 @@ def sendMessageCoordinator(info, coordinators):
     idInfo = checksum(json_info)
     info["id"] = idInfo
     infoEncoded = encodeBase64(json.dumps(info))
-    coordinatorIP = coordinators[getIndexFromCheck(len(coordinators), idInfo)]
-    print("CoordinatorIP: ", coordinatorIP, flush=True, file=sys.stdout)
-    print("CoordinatorIP split: ", coordinatorIP.rsplit(":", 1)[0], flush=True, file=sys.stdout)
-    url = f'{coordinatorIP.rsplit(":", 1)[0]}:2802/{infoEncoded}'
+    coordinatorAddress = coordinators[getIndexFromCheck(len(coordinators), idInfo)]
+
+    url = f'{coordinatorAddress}/{infoEncoded}'
 
     return requests.post(url)
 
