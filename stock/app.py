@@ -7,20 +7,20 @@ serviceNode = NodeService("stock")
 
 
 def get_item(item_id):
-    return serviceNode.collection.find_one({"item_id": item_id}, {"_id": 0})
+    return serviceNode.collection.find_one({"_id": item_id})
 
 
 @app.post('/item/create/<price>')
 def create_item(price: int):
     item_id = str(getAmountOfItems(serviceNode.collection))
-    serviceNode.collection.insert_one({"item_id": item_id, "price": price, "stock": 0})
+    serviceNode.collection.insert_one({"_id": item_id, "price": price, "stock": 0})
 
     return response(200, item_id)
 
 
 @app.get('/find/<item_id>')
 def find_item(item_id: str):
-    result = serviceNode.collection.find_one({"item_id": item_id}, {"_id": 0})
+    result = serviceNode.collection.find_one({"_id": item_id})
     if result == None:
         return response(404, "Item not found")
 
@@ -36,7 +36,7 @@ def add_stock(item_id: str, amount: int):
     if amount < 0:
         return response(400, "Invalid amount")
 
-    query = {"item_id": item_id, }
+    query = {"_id": item_id, }
     newvalues = {"$set": {"stock": amount}}
 
     serviceNode.collection.update_one(query, newvalues)
@@ -46,7 +46,7 @@ def add_stock(item_id: str, amount: int):
 @app.post('/subtract/<item_id>/<int:amount>')
 def remove_stock(item_id: str, amount: int):
 
-    data_object = serviceNode.collection.find_one({"item_id": item_id})
+    data_object = serviceNode.collection.find_one({"_id": item_id})
 
     if data_object == None:
         return response(404, "Item not found")
@@ -58,7 +58,7 @@ def remove_stock(item_id: str, amount: int):
     if amount < 0:
         return response(400, "Invalid amount")
 
-    query = {"item_id": item_id, }
+    query = {"_id": item_id, }
     newvalues = {"$set": {"stock": stock-amount}}
     print(newvalues)
     serviceNode.collection.update_one(query, newvalues)
@@ -90,7 +90,7 @@ def remove_multiple_stock(items_json: str):
 
 @app.post("/check_availability/<item_id>")
 def check_availability(item_id: str):
-    result = serviceNode.collection.find_one({"item_id": item_id}, {"_id": 0})
+    result = serviceNode.collection.find_one({"_id": item_id})
     if result == None:
         return response(404, "Item not found")
 

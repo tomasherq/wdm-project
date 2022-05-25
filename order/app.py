@@ -6,7 +6,6 @@ import logging
 # I want to make the API directions variables accessible by every service!
 # Keep loggin of the files
 
-
 app = Flask(f"order-service-{ID_NODE}")
 logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.INFO,
                     format=f"%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s")
@@ -79,7 +78,7 @@ def add_item(order_id, item_id):
 
     newvalues = {"$set": {"items": order["items"] + [item_id], "total_cost": order["total_cost"] + item[1]}}
 
-    serviceNode.collection.update_one({"order_id": order_id}, newvalues)
+    serviceNode.collection.update_one({"_id": order_id}, newvalues)
     app.logger.info(f"Successfully added item with itemid: {item_id} to order with orderid: {order_id}.")
     return response(200, "Successfully added")
 
@@ -99,6 +98,7 @@ def remove_item(order_id, item_id):
     newvalues = {"$set": {"items": order["items"] - [item_id]}}
 
     serviceNode.collection.update_one({"_id": order_id}, newvalues)
+
     app.logger.info(f"Successfully deleted item with itemid: {item_id} from order with orderid: {order_id}.")
     return response(200, "Successfully removed")
 
@@ -150,7 +150,9 @@ def checkout(order_id):
         return response(501, "Not enough stock for the request")
 
     newvalues = {"$set": {"paid": True}}
+
     serviceNode.collection.update_one({"_id": order_id}, newvalues)
+
     app.logger.info(f"Order with orderid: {order_id} is successfully paid.")
     return response(200, "Order successful")
 
