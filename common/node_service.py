@@ -6,57 +6,58 @@ import aiohttp
 import time
 
 
-# async def gather_with_concurrency(n, *tasks):
-#     semaphore = asyncio.Semaphore(n)
+async def gather_with_concurrency(n, *tasks):
+    semaphore = asyncio.Semaphore(n)
 
-#     async def sem_task(task):
-#         async with semaphore:
-#             return await task
+    async def sem_task(task):
+        async with semaphore:
+            return await task
 
-#     return await asyncio.gather(*(sem_task(task) for task in tasks))
-
-
-# async def get_async(url, session, results):
-#     async with session.get(url) as response:
-#         i = url.split('/')[-1]
-#         obj = await response.text()
-#         results[i] = obj
+    return await asyncio.gather(*(sem_task(task) for task in tasks))
 
 
-# async def main():
-#     connection = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
-#     session = aiohttp.ClientSession(connector=connection)
-#     results = {}
-#     urls = [f"http://192.168.124.10:2801/user/{i}" for i in range(1000)]
-
-#     conc_req = 40
-#     now = time.time()
-#     await gather_with_concurrency(conc_req, *[get_async(i, session, results) for i in urls])
-
-#     print(time_taken)
-#     await session.close()
+async def get_async(url, session, results):
+    async with session.get(url) as response:
+        i = url.split('/')[-1]
+        obj = await response.text()
+        results[i] = obj
 
 
-# asyncio.run(main())
+async def send_async_request(urls):
+    connection = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
+    session = aiohttp.ClientSession(connector=connection)
+    results = {}
+
+    conc_req = 40
+    now = time.time()
+    await gather_with_concurrency(conc_req, *[get_async(i, session, results) for i in urls])
+    time_taken = now-time.time()
+
+    await session.close()
+
+    return results
 
 
 class NodeService():
 
-    def __init__(self, service, ip_address):
+    def __init__(self, service):
 
-        self.collection = getCollection(service+"s", service)
+        self.database = getDatabase(service+"s")
+        self.collection = getCollection(self.database, service)
 
         self.service = service.upper()
-        self.ip_address = ip_address
+
+        self.ip_address = getIPAddress(f"{self.service}_NODES_ADDRESS")
+
         self.coordinators = getAddresses(f"{self.service}_COORD_ADDRESS", 2802)
         self.peer_nodes = getAddresses(f"{self.service}_NODES_ADDRESS")
 
-        print(self.peer_nodes)
-        print(ip_address)
+        self.peer_nodes.remove("http://"+self.ip_address+":2801")
 
-        self.peer_nodes.remove("http://"+ip_address+":2801")
+        self.dropCollection()
 
-        self.currentRequests = defaultdict(list)
+    def dropCollection(self):
+        self.collection.drop()
 
     def sendMessageCoordinator(self, info):
         json_info = json.dumps(info)
@@ -70,29 +71,14 @@ class NodeService():
 
         return requests.post(url)
 
-    # def forwardRequest(self, url, nodes):
+    def forwardRequest(self, url):
 
-    #     async def sendRequest():
-    #         response = await loop.run_in_executor(executor, requests.get, url)
-    #         return response.text
+        print(url)
 
-    #     idUrl = checksum(url)
+        urls = list()
+        for node in self.peer_nodes:
+            urls.append(f"{node}/{url}")
+        results = send_async_request(urls)
 
-    #     self.currentRequests[idUrl]
-
-    #     async_list = []
-    #     counter = 1
-    #     for node in self.peer_nodes:
-    #         executor = ThreadPoolExecutor(counter)
-    #         # The "hooks = {..." part is where you define what you want to do
-    #         #
-    #         # Note the lack of parentheses following do_something, this is
-    #         # because the response will be used as the first argument automatically
-    #         action_item = requests.async.get(u, hooks={'response': do_something})
-
-    #         # Add the task to our list of things to do via async
-    #         async_list.append(action_item)
-    #         counter += 1
-
-    #     # Do our list of things to do via async
-    #     async.map(async_list)
+        print(urls)
+        print(results)

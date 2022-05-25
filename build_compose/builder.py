@@ -13,13 +13,6 @@ def increaseHostPort(index):
 
 docker_object = {"version": "3", "services": {}}
 
-#     shared_net:
-#         driver: bridge
-#         ipam:
-#             config:
-#                 - subnet: 192.168.124.0/24
-# "]
-
 addresses = defaultdict(list)
 hostPorts = [1102, 8080]
 template = ""
@@ -83,6 +76,6 @@ for nodeType in addresses:
         cont += 1
 
 
-with open('docker-compose.yml', 'w') as yaml_file:
+with open('../docker-compose.yml', 'w') as yaml_file:
     data = json.dumps(docker_object, indent=4)
     yaml.dump(json.loads(data), yaml_file, indent=4, default_flow_style=False, sort_keys=False)

@@ -2,8 +2,8 @@ from common.tools import *
 from common.node_service import NodeService
 
 app = Flask(f"stock-service-{ID_NODE}")
-host = getIPAddress("STOCK_NODES_ADDRESS")
-serviceNode = NodeService("stock", host)
+
+serviceNode = NodeService("stock")
 
 
 def get_item(item_id):
@@ -97,4 +97,4 @@ def check_availability(item_id: str):
     return response(200, (result["stock"], result["price"]))
 
 
-app.run(host=host, port=2801)
+app.run(host=serviceNode.ip_address, port=2801)

@@ -11,20 +11,24 @@ app = Flask(f"order-service-{ID_NODE}")
 logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.INFO,
                     format=f"%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s")
 
-host = getIPAddress("ORDER_NODES_ADDRESS")
-serviceNode = NodeService("order", host)
+serviceNode = NodeService("order")
 
 
-@app.before_request
-def log_request_info():
-    app.logger.debug('Headers: %s', request.headers)
-    app.logger.debug('Body: %s', request.get_data())
+# @app.before_request
+# def log_request_info():
+
+#     address_request = request.remote_addr+":2802"
+
+#     if address_request in serviceNode.coordinators:
+#         print('This is error output', file=sys.stderr)
+
+#     print(request.remote_addr)
 
 
 # Change the field _id to be the order_id and so
 
 def get_order(order_id):
-    return serviceNode.collection.find_one({"order_id": order_id}, {"_id": 0})
+    return serviceNode.collection.find_one({"_id": order_id})
 
 
 @app.route('/')
@@ -38,7 +42,7 @@ def create_order(user_id):
     # Maybe add security? --> I want an ngnix rather than this crap
 
     order_id = str(getAmountOfItems(serviceNode.collection))
-    serviceNode.collection.insert_one({"order_id": order_id, "paid": False,
+    serviceNode.collection.insert_one({"_id": order_id,  "paid": False,
                                       "items": [], "user": user_id, "total_cost": 0})
     app.logger.info(f"Created order with orderid: {order_id} and userid: {user_id}.")
     return response(200, f"Correctly added, orderid {order_id}")
@@ -50,7 +54,7 @@ def remove_order(order_id):
         app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, "Order not found")
 
-    serviceNode.collection.delete_one({"order_id": order_id})
+    serviceNode.collection.delete_one({"_id": order_id})
     app.logger.info(f"Order with orderid: {order_id} was successfully removed.")
     return response(200, f"Correctly deleted, orderid {order_id}")
 
@@ -94,7 +98,7 @@ def remove_item(order_id, item_id):
 
     newvalues = {"$set": {"items": order["items"] - [item_id]}}
 
-    serviceNode.collection.update_one({"order_id": order_id}, newvalues)
+    serviceNode.collection.update_one({"_id": order_id}, newvalues)
     app.logger.info(f"Successfully deleted item with itemid: {item_id} from order with orderid: {order_id}.")
     return response(200, "Successfully removed")
 
@@ -146,9 +150,9 @@ def checkout(order_id):
         return response(501, "Not enough stock for the request")
 
     newvalues = {"$set": {"paid": True}}
-    serviceNode.collection.update_one({"order_id": order_id}, newvalues)
+    serviceNode.collection.update_one({"_id": order_id}, newvalues)
     app.logger.info(f"Order with orderid: {order_id} is successfully paid.")
     return response(200, "Order successful")
 
 
-app.run(host=host, port=2801)
+app.run(host=serviceNode.ip_address, port=2801)

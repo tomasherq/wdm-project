@@ -3,8 +3,8 @@ from common.node_service import NodeService
 
 app = Flask(f"payment-service-{ID_NODE}")
 
-host = getIPAddress("PAYMENT_NODES_ADDRESS")
-serviceNode = NodeService("payment", host)
+
+serviceNode = NodeService("payment")
 
 # TODO:Remove all non used stuff from functions
 
@@ -102,4 +102,4 @@ def payment_status(user_id: str, order_id: str):
     return response(200, f"Order status: {order_status}")
 
 
-app.run(host=host, port=2801)
+app.run(host=serviceNode.ip_address, port=2801)

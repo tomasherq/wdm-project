@@ -10,6 +10,15 @@ app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
 # I want to have the address and port of the clients.
 
 
+def process_reply(data_reply):
+    try:
+
+        return json.loads(data_reply.text)
+
+    except:
+        return response(501, "Invalid URL.")
+
+
 @app.route('/ping')
 def ping_service():
     return f'Hello, I am ping service!'
@@ -25,18 +34,16 @@ def catch_all(path):
 
     if ip_addr in nodesDirections:
         return response(403, "Not authorized.")
-
     responses = []
-
+    url = ''
     for nodeDir in nodesDirections:
         url = f'{nodeDir}/{path}'
-
         if request.method == 'POST':
-            reply = json.loads(requests.post(url).text)
+            reply = process_reply(requests.post(url))
         elif request.method == "GET":
-            reply = json.loads(requests.get(url).text)
+            reply = process_reply(requests.get(url))
         elif request.method == "DELETE":
-            reply = json.loads(requests.delete(url).text)
+            reply = process_reply(requests.delete(url))
         else:
             return response(401, f"Used invalid method")
 
@@ -45,7 +52,7 @@ def catch_all(path):
     if all(reply == responses[0] for reply in responses):
         return responses[0]
     else:
-        return response(501, f"Server error occured")
+        return response(501, json.dumps(responses, indent=4))
 
 
 app.run(host=getIPAddress(f"{serviceID}_COORD_ADDRESS"), port=2801)
