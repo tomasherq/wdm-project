@@ -8,7 +8,8 @@ import math
 from flask import Flask, request
 from ipv4checksum import checksum
 # test if sync works
-PASSWORD = os.environ.get('MONGO_PASSWORD')
+
+# PASSWORD = os.environ.get('MONGO_PASSWORD')
 PREFIX_IP = os.environ.get("PREFIX_IP")
 ID_NODE = int(sys.argv[1])
 
@@ -20,9 +21,9 @@ def response(code, text):
 
 
 def getCollection(database, collection):
-    client = MongoClient("mongodb+srv://user:" + PASSWORD +
-                         "@gala.iykme.mongodb.net/myFirstDatabase?retryWrites=true&w=majority", 27017)
-    # client = MongoClient("localhost", 27017)
+
+    client = MongoClient("localhost", 27017)
+
     database = client[database]
     collection = database[collection]
 
