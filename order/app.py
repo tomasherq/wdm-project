@@ -5,12 +5,12 @@ import logging
 # I want to make the API directions variables accessible by every service!
 # Keep loggin of the files
 
-
 app = Flask(f"order-service-{ID_NODE}")
 logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.INFO,
                     format=f"%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s")
 
 orderCollection = getCollection("orders", "order")
+orderCollection.drop()
 coordinators = getAddresses("ORDER_COORD_ADDRESS", 2802)
 
 
@@ -23,7 +23,7 @@ def log_request_info():
 # Change the field _id to be the order_id and so
 
 def get_order(order_id):
-    return orderCollection.find_one({"order_id": order_id}, {"_id": 0})
+    return orderCollection.find_one({"_id": order_id}, {"_id": 0})
 
 
 @app.route('/')
@@ -37,7 +37,7 @@ def create_order(user_id):
     # Maybe add security? --> I want an ngnix rather than this crap
 
     order_id = str(getAmountOfItems(orderCollection))
-    orderCollection.insert_one({"order_id": order_id, "paid": False, "items": [], "user": user_id, "total_cost": 0})
+    orderCollection.insert_one({"_id": order_id, "paid": False, "items": [], "user": user_id, "total_cost": 0})
     app.logger.info(f"Created order with orderid: {order_id} and userid: {user_id}.")
     return response(200, f"Correctly added, orderid {order_id}")
 
@@ -48,7 +48,7 @@ def remove_order(order_id):
         app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, "Order not found")
 
-    orderCollection.delete_one({"order_id": order_id})
+    orderCollection.delete_one({"_id": order_id})
     app.logger.info(f"Order with orderid: {order_id} was successfully removed.")
     return response(200, f"Correctly deleted, orderid {order_id}")
 
@@ -73,7 +73,7 @@ def add_item(order_id, item_id):
 
     newvalues = {"$set": {"items": order["items"] + [item_id], "total_cost": order["total_cost"] + item[1]}}
 
-    orderCollection.update_one({"order_id": order_id}, newvalues)
+    orderCollection.update_one({"_id": order_id}, newvalues)
     app.logger.info(f"Successfully added item with itemid: {item_id} to order with orderid: {order_id}.")
     return response(200, "Successfully added")
 
@@ -91,7 +91,7 @@ def remove_item(order_id, item_id):
 
     newvalues = {"$set": {"items": order["items"] - [item_id]}}
 
-    orderCollection.update_one({"order_id": order_id}, newvalues)
+    orderCollection.update_one({"_id": order_id}, newvalues)
     app.logger.info(f"Successfully deleted item with itemid: {item_id} from order with orderid: {order_id}.")
     return response(200, "Successfully removed")
 
@@ -146,7 +146,7 @@ def checkout(order_id):
         return response(501, "Not enough stock for the request")
 
     newvalues = {"$set": {"paid": True}}
-    orderCollection.update_one({"order_id": order_id}, newvalues)
+    orderCollection.update_one({"_id": order_id}, newvalues)
     app.logger.info(f"Order with orderid: {order_id} is successfully paid.")
     return response(200, "Order successful")
 
