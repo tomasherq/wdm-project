@@ -8,6 +8,11 @@ serviceNode = NodeService("payment")
 
 # TODO:Remove all non used stuff from functions
 
+@app.get('/getHash')
+def getHash():
+    d = serviceNode.database.command("dbHash")
+    return response(200, d["md5"])
+
 
 def helper_find_user(user_id):
     user_object = serviceNode.collection.find_one({"_id": user_id})

@@ -5,6 +5,11 @@ app = Flask(f"stock-service-{ID_NODE}")
 
 serviceNode = NodeService("stock")
 
+@app.get('/getHash')
+def getHash():
+    d = serviceNode.database.command("dbHash")
+    return response(200, d["md5"])
+
 
 def get_item(item_id):
     return serviceNode.collection.find_one({"_id": item_id})

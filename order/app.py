@@ -12,6 +12,11 @@ logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.
 
 serviceNode = NodeService("order")
 
+@app.get('/getHash')
+def getHash():
+    d = serviceNode.database.command("dbHash")
+    return response(200, d["md5"])
+
 
 # @app.before_request
 # def log_request_info():
