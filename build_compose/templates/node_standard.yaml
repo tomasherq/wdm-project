@@ -7,12 +7,11 @@ hostname:
         dockerfile: Mongo.Dockerfile
     image: $NAME
     env_file:
-        - env/mongo.env
         - env/addresses.env
     volumes:
         - ./$SERVICE_NAME:/app/$SERVICE_NAME
         - ./common:/app/$SERVICE_NAME/common
-    command: bash -c "cd $SERVICE_NAME/common/ && bash execution.sh $NODE_ID"
+    command: bash -c "bash execution.sh $NODE_ID"
     ports:
         - $PORT_HOST:2801
-    networks: "whatever"
+    networks: $NETWORK

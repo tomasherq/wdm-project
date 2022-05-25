@@ -1,7 +1,5 @@
-FROM python:3.10-slim
+FROM python:3.8.10
 
-# disable tzdata prompt
-ENV DEBIAN_FRONTEND=noninteractive 
 
 # install Python 3
 RUN apt-get update && apt-get install -y python3 python3-pip curl vim net-tools iputils-ping

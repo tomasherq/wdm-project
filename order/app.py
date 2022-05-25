@@ -1,4 +1,5 @@
 from common.tools import *
+from common.node_service import NodeService
 import sys
 import logging
 
@@ -9,35 +10,39 @@ app = Flask(f"order-service-{ID_NODE}")
 logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.INFO,
                     format=f"%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s")
 
-orderCollection = getCollection("orders", "order")
-orderCollection.drop()
-coordinators = getAddresses("ORDER_COORD_ADDRESS", 2802)
+serviceNode = NodeService("order")
 
 
-@app.before_request
-def log_request_info():
-    app.logger.debug('Headers: %s', request.headers)
-    app.logger.debug('Body: %s', request.get_data())
+# @app.before_request
+# def log_request_info():
+
+#     address_request = request.remote_addr+":2802"
+
+#     if address_request in serviceNode.coordinators:
+#         print('This is error output', file=sys.stderr)
+
+#     print(request.remote_addr)
 
 
 # Change the field _id to be the order_id and so
 
 def get_order(order_id):
-    return orderCollection.find_one({"_id": order_id}, {"_id": 0})
+    return serviceNode.collection.find_one({"_id": order_id})
 
 
 @app.route('/')
 def ping_service():
 
-    return json.dumps(coordinators)
+    return json.dumps(serviceNode.coordinators)
 
 
 @app.post('/create/<user_id>')
 def create_order(user_id):
     # Maybe add security? --> I want an ngnix rather than this crap
 
-    order_id = str(getAmountOfItems(orderCollection))
-    orderCollection.insert_one({"_id": order_id, "paid": False, "items": [], "user": user_id, "total_cost": 0})
+    order_id = str(getAmountOfItems(serviceNode.collection))
+    serviceNode.collection.insert_one({"_id": order_id,  "paid": False,
+                                      "items": [], "user": user_id, "total_cost": 0})
     app.logger.info(f"Created order with orderid: {order_id} and userid: {user_id}.")
     return response(200, f"Correctly added, orderid {order_id}")
 
@@ -48,7 +53,7 @@ def remove_order(order_id):
         app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, "Order not found")
 
-    orderCollection.delete_one({"_id": order_id})
+    serviceNode.collection.delete_one({"_id": order_id})
     app.logger.info(f"Order with orderid: {order_id} was successfully removed.")
     return response(200, f"Correctly deleted, orderid {order_id}")
 
@@ -63,8 +68,8 @@ def add_item(order_id, item_id):
 
     info = {"url": f"/check_availability/{item_id}", "service": "stock"}
 
-    item_info = sendMessageCoordinator(info, coordinators)
-    app.logger.info(f"Sending message to coordinator: {coordinators}")
+    item_info = serviceNode.sendMessageCoordinator(info)
+    app.logger.info(f"Sending message to coordinator: {serviceNode.coordinators}")
 
     item = json.loads(item_info.text)["message"]
     if item[0] == 0:
@@ -73,7 +78,7 @@ def add_item(order_id, item_id):
 
     newvalues = {"$set": {"items": order["items"] + [item_id], "total_cost": order["total_cost"] + item[1]}}
 
-    orderCollection.update_one({"_id": order_id}, newvalues)
+    serviceNode.collection.update_one({"_id": order_id}, newvalues)
     app.logger.info(f"Successfully added item with itemid: {item_id} to order with orderid: {order_id}.")
     return response(200, "Successfully added")
 
@@ -85,13 +90,15 @@ def remove_item(order_id, item_id):
     if order == None:
         app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, "Order not found")
+
     if item_id not in order["items"]:
         app.logger.error(f"Item with itemid: {item_id} was not found.")
         return response(404, "Item not in order")
 
     newvalues = {"$set": {"items": order["items"] - [item_id]}}
 
-    orderCollection.update_one({"_id": order_id}, newvalues)
+    serviceNode.collection.update_one({"_id": order_id}, newvalues)
+
     app.logger.info(f"Successfully deleted item with itemid: {item_id} from order with orderid: {order_id}.")
     return response(200, "Successfully removed")
 
@@ -106,9 +113,6 @@ def find_order(order_id: str):
     return response(200, result)
 
 
-# The services should only talk with their coordinator to prevent inconsistency
-
-
 @app.post('/checkout/<order_id>')
 def checkout(order_id):
     result = get_order(order_id)
@@ -120,8 +124,8 @@ def checkout(order_id):
     # This is to have the order done!
     info = {"url": f'/pay/{result["user"]}/{order_id}/{result["total_cost"]}', "service": "payment"}
 
-    pay_info = sendMessageCoordinator(info, coordinators)
-    app.logger.info(f"Sending payment information to coordinators: {coordinators}.")
+    pay_info = serviceNode.sendMessageCoordinator(info)
+    app.logger.info(f"Sending payment information to serviceNode.coordinators: {serviceNode.coordinators}.")
     pay_status = json.loads(pay_info.text)["status"]
 
     if pay_status != 200:
@@ -133,7 +137,7 @@ def checkout(order_id):
     info = {"url": f'/substract_multiple/{items}', "service": "stock"}
 
     # Remove the stock
-    stock_info = sendMessageCoordinator(info, coordinators)
+    stock_info = serviceNode.sendMessageCoordinator(info)
     stock_status = json.loads(stock_info.text)["status"]
 
     app.logger.info(f"Removing items from stock for order with orderid: {order_id}.")
@@ -141,14 +145,16 @@ def checkout(order_id):
     if stock_status != 200:
         # Reimburse payment
         info = {"url": f'/add_funds/{result["user"]}/{result["total_cost"]}', "service": "payment"}
-        pay_info = sendMessageCoordinator(info, coordinators)
+        pay_info = serviceNode.sendMessageCoordinator(info)
         app.logger.info(f"Not enough stock! Reimburse payment for order with orderid: {order_id}.")
         return response(501, "Not enough stock for the request")
 
     newvalues = {"$set": {"paid": True}}
-    orderCollection.update_one({"_id": order_id}, newvalues)
+
+    serviceNode.collection.update_one({"_id": order_id}, newvalues)
+
     app.logger.info(f"Order with orderid: {order_id} is successfully paid.")
     return response(200, "Order successful")
 
 
-app.run(host=getIPAddress("ORDER_NODES_ADDRESS"), port=2801)
+app.run(host=serviceNode.ip_address, port=2801)

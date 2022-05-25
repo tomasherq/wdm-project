@@ -1,7 +1,0 @@
-README.md
-setup.py
-/app/coordinator/common/ipv4checksum/src/ipv4checksum.c
-ipv4checksum.egg-info/PKG-INFO
-ipv4checksum.egg-info/SOURCES.txt
-ipv4checksum.egg-info/dependency_links.txt
-ipv4checksum.egg-info/top_level.txt

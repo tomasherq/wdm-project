@@ -6,7 +6,8 @@ import sys
 import requests
 import math
 from flask import Flask, request
-from ipv4checksum import checksum
+from hashlib import md5
+
 # test if sync works
 
 # PASSWORD = os.environ.get('MONGO_PASSWORD')
@@ -20,14 +21,16 @@ def response(code, text):
     return json.dumps({"status": code, "message": text})
 
 
-def getCollection(database, collection):
+def getDatabase(database_name):
 
     client = MongoClient("localhost", 27017)
 
-    database = client[database]
-    collection = database[collection]
+    return client[database_name]
 
-    return collection
+
+def getCollection(database, collection_name):
+
+    return database[collection_name]
 
 
 def getAmountOfItems(collection):
@@ -55,6 +58,15 @@ def getAddresses(service, port=2801):
     return addresses
 
 
+def checksum(sentence):
+    result = md5(sentence.encode()).hexdigest()
+    check = ''
+    for i in result:
+        if i.isdigit():
+            check += i
+    return int(check)
+
+
 def getIndexFromCheck(nNodes, checkNum):
     indexMaxNodes = nNodes-1
 
@@ -73,20 +85,3 @@ def getIndexFromCheck(nNodes, checkNum):
         index -= indexMaxNodes
 
     return index
-
-
-def sendMessageCoordinator(info, coordinators):
-    json_info = json.dumps(info)
-
-    idInfo = checksum(json_info)
-    info["id"] = idInfo
-    infoEncoded = encodeBase64(json.dumps(info))
-    coordinatorAddress = coordinators[getIndexFromCheck(len(coordinators), idInfo)]
-
-    url = f'{coordinatorAddress}/{infoEncoded}'
-
-    return requests.post(url)
-
-
-def checkAccess(request, allowedAddresses):
-    return request.remote_addr in allowedAddresses

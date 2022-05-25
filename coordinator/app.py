@@ -10,6 +10,15 @@ app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
 # I want to have the address and port of the clients.
 
 
+def process_reply(data_reply):
+    try:
+
+        return json.loads(data_reply.text)
+
+    except:
+        return response(501, "Invalid URL.")
+
+
 @app.route('/ping')
 def ping_service():
     return f'Hello, I am ping service!'
@@ -23,29 +32,18 @@ def catch_all(path):
 
     ip_addr = request.remote_addr
 
-    print(path, file=sys.stdout, flush=True)
-
     if ip_addr in nodesDirections:
         return response(403, "Not authorized.")
-
     responses = []
-    print("NodesDirections: ", file=sys.stdout, flush=True )
-    print(nodesDirections, file=sys.stdout, flush=True)
+    url = ''
     for nodeDir in nodesDirections:
         url = f'{nodeDir}/{path}'
-        print("URL:", file=sys.stdout, flush=True )
-        print(url, file=sys.stdout, flush=True)
         if request.method == 'POST':
-            print("POST REQUEST OBJECT:", file=sys.stdout, flush=True)
-            print(request, file=sys.stdout, flush=True)
-
-            print("requests object to decode:", file=sys.stdout, flush=True )
-            print(requests.post(url).text, file=sys.stdout, flush=True)
-            reply = json.loads(requests.post(url).text)
+            reply = process_reply(requests.post(url))
         elif request.method == "GET":
-            reply = json.loads(requests.get(url).text)
+            reply = process_reply(requests.get(url))
         elif request.method == "DELETE":
-            reply = json.loads(requests.delete(url).text)
+            reply = process_reply(requests.delete(url))
         else:
             return response(401, f"Used invalid method")
 
@@ -54,7 +52,7 @@ def catch_all(path):
     if all(reply == responses[0] for reply in responses):
         return responses[0]
     else:
-        return response(501, f"Server error occured")
+        return response(501, json.dumps(responses, indent=4))
 
 
 app.run(host=getIPAddress(f"{serviceID}_COORD_ADDRESS"), port=2801)
