@@ -1,18 +1,16 @@
 from common.tools import *
-
+from common.node_service import NodeService
 
 app = Flask(f"payment-service-{ID_NODE}")
 
-collection = getCollection("users", "user")
-
-collection.drop()  # This will delete everything you got .... want that?
-coordinators = getAddresses("PAYMENT_COORD_ADDRESS", 2802)
-
+host = getIPAddress("PAYMENT_NODES_ADDRESS")
+serviceNode = NodeService("payment", host)
 
 # TODO:Remove all non used stuff from functions
 
+
 def helper_find_user(user_id):
-    user_object = collection.find_one({"user_id": user_id})
+    user_object = serviceNode.collection.find_one({"user_id": user_id})
     if user_object == None:
         return response(404, "User not found")
     return user_object
@@ -22,7 +20,7 @@ def helper_find_order(order_id):
 
     info = {"url": f"/find/{order_id}", "service": "order"}
 
-    orderInfo = sendMessageCoordinator(info, coordinators)
+    orderInfo = serviceNode.sendMessageCoordinator(info)
 
     code = json.loads(orderInfo.text)["status"]
     if code == 404:
@@ -34,14 +32,14 @@ def helper_find_order(order_id):
 
 @app.post('/create_user')
 def create_user():
-    user_id = str(getAmountOfItems(collection))
-    collection.insert_one({"user_id": user_id, "credit": 0})
+    user_id = str(getAmountOfItems(serviceNode.collection))
+    serviceNode.collection.insert_one({"user_id": user_id, "credit": 0})
     return response(200, f"Correctly added, userid {user_id}")
 
 
 @app.get('/find_user/<user_id>')
 def find_user(user_id: str):
-    result = collection.find_one({"user_id": user_id}, {"_id": 0})
+    result = serviceNode.collection.find_one({"user_id": user_id}, {"_id": 0})
     if result == None:
         return response(404, "User not found")
 
@@ -58,7 +56,7 @@ def add_credit(user_id: str, amount: int):
     query = {"user_id": user_id}
     newvalues = {"$set": {"credit": user_credit+amount}}
 
-    collection.update_one(query, newvalues)
+    serviceNode.collection.update_one(query, newvalues)
     return response(200, f"Updated, new credit: {user_credit}")
 
 
@@ -77,7 +75,7 @@ def remove_credit(user_id: str, order_id: str, amount: int):
 
     query = {"user_id": user_id}
     newvalues = {"$set": {"credit": user_credit-amount}}
-    collection.update_one(query, newvalues)
+    serviceNode.collection.update_one(query, newvalues)
 
     return response(200, f"Payment made, new credit: {user_credit}")
 
@@ -90,7 +88,7 @@ def cancel_payment(user_id: str, order_id: str):
 
     newvalues = {"order_id": order_id}
 
-    collection.delete_one(newvalues)
+    serviceNode.collection.delete_one(newvalues)
     return response(200, "Order deleted")
 
 
@@ -104,4 +102,4 @@ def payment_status(user_id: str, order_id: str):
     return response(200, f"Order status: {order_status}")
 
 
-app.run(host=getIPAddress("PAYMENT_NODES_ADDRESS"), port=2801)
+app.run(host=host, port=2801)

@@ -73,20 +73,3 @@ def getIndexFromCheck(nNodes, checkNum):
         index -= indexMaxNodes
 
     return index
-
-
-def sendMessageCoordinator(info, coordinators):
-    json_info = json.dumps(info)
-
-    idInfo = checksum(json_info)
-    info["id"] = idInfo
-    infoEncoded = encodeBase64(json.dumps(info))
-    coordinatorAddress = coordinators[getIndexFromCheck(len(coordinators), idInfo)]
-
-    url = f'{coordinatorAddress}/{infoEncoded}'
-
-    return requests.post(url)
-
-
-def checkAccess(request, allowedAddresses):
-    return request.remote_addr in allowedAddresses
