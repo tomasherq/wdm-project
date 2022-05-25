@@ -6,7 +6,7 @@ app = Flask(f"payment-service-{ID_NODE}")
 collection = getCollection("users", "user")
 
 collection.drop()  # This will delete everything you got .... want that?
-coordinators = getAddresses("PAYMENT_COORD_ADDRESS")
+coordinators = getAddresses("PAYMENT_COORD_ADDRESS", 2802)
 
 
 # TODO:Remove all non used stuff from functions

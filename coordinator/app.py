@@ -1,3 +1,5 @@
+import sys
+
 from common.tools import *
 
 serviceID = sys.argv[2]
@@ -21,14 +23,24 @@ def catch_all(path):
 
     ip_addr = request.remote_addr
 
+    print(path, file=sys.stdout, flush=True)
+
     if ip_addr in nodesDirections:
         return response(403, "Not authorized.")
 
     responses = []
+    print("NodesDirections: ", file=sys.stdout, flush=True )
+    print(nodesDirections, file=sys.stdout, flush=True)
     for nodeDir in nodesDirections:
-        url = f"{nodeDir}/{path}"
-
+        url = f'{nodeDir}/{path}'
+        print("URL:", file=sys.stdout, flush=True )
+        print(url, file=sys.stdout, flush=True)
         if request.method == 'POST':
+            print("POST REQUEST OBJECT:", file=sys.stdout, flush=True)
+            print(request, file=sys.stdout, flush=True)
+
+            print("requests object to decode:", file=sys.stdout, flush=True )
+            print(requests.post(url).text, file=sys.stdout, flush=True)
             reply = json.loads(requests.post(url).text)
         elif request.method == "GET":
             reply = json.loads(requests.get(url).text)
