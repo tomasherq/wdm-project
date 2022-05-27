@@ -15,7 +15,7 @@ replies = defaultdict(lambda: {})
 nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
 
 
-@app.before_request()
+@app.before_request
 def check_address_node():
 
     dir_node = "http://"+request.remote_addr+":2801"

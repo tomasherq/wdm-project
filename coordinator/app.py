@@ -23,13 +23,14 @@ if service == "order":
     service = "orders"
 
 
+@app.before_request
+def check_address_node():
+    if request.remote_addr in nodesDirections:
+        return response(403, "Not authorized.")
+
+
 @app.route(f'/{service}/<path:path>', methods=['POST', 'GET', 'DELETE'])
 def catch_all(path):
-
-    ip_addr = request.remote_addr
-
-    if ip_addr in nodesDirections:
-        return response(403, "Not authorized.")
 
     idRequest = getIdRequest(path)
 
@@ -47,7 +48,7 @@ def catch_all(path):
 
     reply = process_reply(requests.request(request.method, url, headers=headers))
 
-    return reply
+    return response(reply["status"], reply["message"])
 
 
 app.run(host=getIPAddress(f"{serviceID}_COORD_ADDRESS"), port=2801)

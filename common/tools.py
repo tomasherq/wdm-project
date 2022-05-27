@@ -22,6 +22,9 @@ def response(status, text, id_request=None):
     data_response = json.dumps({"status": status, "message": text})
 
     response = make_response(data_response, status)
+    response._status_code = status
+    response.status_code = status
+
     if id_request is not None:
         response.headers["Id-request"] = id_request
     return response
