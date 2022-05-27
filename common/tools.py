@@ -5,8 +5,9 @@ import os
 import sys
 import requests
 import math
-from flask import Flask, request
+from flask import Flask, request, make_response
 from hashlib import md5
+from collections import defaultdict
 
 # test if sync works
 
@@ -17,8 +18,13 @@ ID_NODE = int(sys.argv[1])
 # test if sync works from pc to container
 
 
-def response(code, text):
-    return json.dumps({"status": code, "message": text})
+def response(status, text, id_request=None):
+    data_response = json.dumps({"status": status, "message": text})
+
+    response = make_response(data_response, status)
+    if id_request is not None:
+        response.headers["Id-request"] = id_request
+    return response
 
 
 def getDatabase(database_name):
@@ -58,16 +64,18 @@ def getAddresses(service, port=2801):
     return addresses
 
 
-def checksum(sentence):
-    result = md5(sentence.encode()).hexdigest()
-    check = ''
-    for i in result:
+def getIdRequest(sentence):
+    return str(md5(sentence.encode()).hexdigest())
+
+
+def getIndexFromCheck(nNodes, md5Id):
+
+    # LIMITATION: Same order executed will get the same Id, so it might be that a node is overloaded....
+    checkNum = ''
+    for i in md5Id:
         if i.isdigit():
-            check += i
-    return int(check)
+            checkNum += i
 
-
-def getIndexFromCheck(nNodes, checkNum):
     indexMaxNodes = nNodes-1
 
     if indexMaxNodes == 0:
@@ -75,13 +83,27 @@ def getIndexFromCheck(nNodes, checkNum):
 
     nDigits = int(math.log(nNodes, 10))+1
 
-    checkNum = str(checkNum)
-
     while len(checkNum) < nDigits:
         checkNum = checkNum+checkNum
 
-    index = int(str(checkNum)[:nDigits])
+    index = int(checkNum[:nDigits])
+
     while index > indexMaxNodes:
         index -= indexMaxNodes
 
     return index
+
+
+def request_is_read(request):
+    return "check_availability" in request.path or request.method == "GET" or "/status" in request.path
+
+
+def process_reply(data_reply, return_json=False):
+    try:
+        return data_reply.text if return_json else json.loads(data_reply.text)
+    except:
+        return response(501, "Invalid URL.")
+
+
+def debug_print(var):
+    return print(var, file=sys.stdout, flush=True)
