@@ -29,6 +29,29 @@ def check_address_node():
         return response(403, "Not authorized.")
 
 
+@app.get('/consistency')
+def check_consistency():
+
+    nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
+
+    ip_addr = request.remote_addr
+
+    if ip_addr in nodesDirections:
+        return response(403, "Not authorized.")
+    responses = []
+    url = ''
+    for nodeDir in nodesDirections:
+        url = f'{nodeDir}/getHash'
+        reply = process_reply(requests.get(url))
+        hash = reply.pop('message')
+        responses.append(hash)
+    
+    result = responses.count(responses[0]) == len(responses)
+
+    return response(200, f"Consistency: {result}")
+
+
+
 @app.route(f'/{service}/<path:path>', methods=['POST', 'GET', 'DELETE'])
 def catch_all(path):
 

@@ -16,6 +16,12 @@ serviceNode = NodeService("order")
 responses = defaultdict(lambda: {})
 
 
+@app.get('/getHash')
+def getHash():
+    d = serviceNode.database.command("dbHash")
+    return response(200, d["md5"])
+
+
 @app.before_request
 def log_request_info():
     id_request = request.headers["Id-request"]
