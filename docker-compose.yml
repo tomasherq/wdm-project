@@ -38,25 +38,6 @@ services:
         networks:
             shared_net:
                 ipv4_address: 192.168.124.11
-    order-nodes-3:
-        container_name: order-nodes-3
-        hostname: order-nodes-3
-        working_dir: /app
-        build:
-            context: .
-            dockerfile: Mongo.Dockerfile
-        image: order-nodes-3
-        env_file:
-        - env/addresses.env
-        volumes:
-        - ./order:/app/order
-        - ./common:/app/order/common
-        command: bash -c "cd order/common/ && bash execution.sh 3"
-        ports:
-        - 1104:2801
-        networks:
-            shared_net:
-                ipv4_address: 192.168.124.12
     payment-nodes-1:
         container_name: payment-nodes-1
         hostname: payment-nodes-1
@@ -72,7 +53,7 @@ services:
         - ./common:/app/payment/common
         command: bash -c "cd payment/common/ && bash execution.sh 1"
         ports:
-        - 1105:2801
+        - 1104:2801
         networks:
             shared_net:
                 ipv4_address: 192.168.124.30
@@ -91,7 +72,7 @@ services:
         - ./common:/app/stock/common
         command: bash -c "cd stock/common/ && bash execution.sh 1"
         ports:
-        - 1106:2801
+        - 1105:2801
         networks:
             shared_net:
                 ipv4_address: 192.168.124.50
@@ -110,7 +91,7 @@ services:
         - ./common:/app/coordinator/common
         command: bash -c "cd coordinator/common/ && bash execution.sh 1 ORDER"
         ports:
-        - 1107:2801
+        - 1106:2801
         - 8080:2802
         networks:
             shared_net:
@@ -130,7 +111,7 @@ services:
         - ./common:/app/coordinator/common
         command: bash -c "cd coordinator/common/ && bash execution.sh 1 PAYMENT"
         ports:
-        - 1108:2801
+        - 1107:2801
         - 8081:2802
         networks:
             shared_net:
@@ -150,7 +131,7 @@ services:
         - ./common:/app/coordinator/common
         command: bash -c "cd coordinator/common/ && bash execution.sh 1 STOCK"
         ports:
-        - 1109:2801
+        - 1108:2801
         - 8082:2802
         networks:
             shared_net:

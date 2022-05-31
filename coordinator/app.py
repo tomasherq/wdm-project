@@ -1,32 +1,27 @@
 import sys
 
-from random import randint
-
 from common.tools import *
 
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
-nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
 
 # Each one of the services will run an instance, run in a different port and have different clients
 
 # I want to have the address and port of the clients.
 
 
+def process_reply(data_reply):
+    try:
+
+        return json.loads(data_reply.text)
+
+    except:
+        return response(501, "Invalid URL.")
+
+
 @app.route('/ping')
 def ping_service():
     return f'Hello, I am ping service!'
-
-
-service = serviceID.lower()
-if service == "order":
-    service = "orders"
-
-
-@app.before_request
-def check_address_node():
-    if request.remote_addr in nodesDirections:
-        return response(403, "Not authorized.")
 
 
 @app.get('/consistency')
@@ -51,27 +46,35 @@ def check_consistency():
     return response(200, f"Consistency: {result}")
 
 
-
-@app.route(f'/{service}/<path:path>', methods=['POST', 'GET', 'DELETE'])
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>', methods=['POST', 'GET', 'DELETE'])
 def catch_all(path):
 
-    idRequest = getIdRequest(path)
+    nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
 
-    headers = {"Id-request": idRequest}
-    if request_is_read(request):
+    ip_addr = request.remote_addr
 
-        indexNode = randint(0, len(nodesDirections)-1)
+    if ip_addr in nodesDirections:
+        return response(403, "Not authorized.")
+    responses = []
+    url = ''
+    for nodeDir in nodesDirections:
+        url = f'{nodeDir}/{path}'
+        if request.method == 'POST':
+            reply = process_reply(requests.post(url))
+        elif request.method == "GET":
+            reply = process_reply(requests.get(url))
+        elif request.method == "DELETE":
+            reply = process_reply(requests.delete(url))
+        else:
+            return response(401, f"Used invalid method")
+
+        responses.append(reply)
+
+    if all(reply == responses[0] for reply in responses):
+        return responses[0]
     else:
-        headers["Redirect"] = "1"
-        indexNode = getIndexFromCheck(len(nodesDirections), idRequest)
-
-    nodeDir = nodesDirections[indexNode]
-
-    url = f'{nodeDir}/{path}'
-
-    reply = process_reply(requests.request(request.method, url, headers=headers))
-
-    return response(reply["status"], reply["message"])
+        return response(501, json.dumps(responses, indent=4))
 
 
 app.run(host=getIPAddress(f"{serviceID}_COORD_ADDRESS"), port=2801)

@@ -1,6 +1,41 @@
 from common.tools import *
 from collections import defaultdict
-from common.async_calls import send_requests, asyncio
+
+import asyncio
+import aiohttp
+import time
+
+
+async def gather_with_concurrency(n, *tasks):
+    semaphore = asyncio.Semaphore(n)
+
+    async def sem_task(task):
+        async with semaphore:
+            return await task
+
+    return await asyncio.gather(*(sem_task(task) for task in tasks))
+
+
+async def get_async(url, session, results):
+    async with session.get(url) as response:
+        i = url.split('/')[-1]
+        obj = await response.text()
+        results[i] = obj
+
+
+async def send_async_request(urls):
+    connection = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
+    session = aiohttp.ClientSession(connector=connection)
+    results = {}
+
+    conc_req = 40
+    now = time.time()
+    await gather_with_concurrency(conc_req, *[get_async(i, session, results) for i in urls])
+    time_taken = now-time.time()
+
+    await session.close()
+
+    return results
 
 
 class NodeService():
@@ -24,29 +59,26 @@ class NodeService():
     def dropCollection(self):
         self.collection.drop()
 
-    def sendMessageCoordinator(self, url, service, method):
-        info_for_coord = {"url": url, "service": service, "method": method}
+    def sendMessageCoordinator(self, info):
+        json_info = json.dumps(info)
 
-        idInfo = getIdRequest(json.dumps(info_for_coord))
-        info_for_coord["id"] = idInfo
-        infoEncoded = encodeBase64(json.dumps(info_for_coord))
+        idInfo = checksum(json_info)
+        info["id"] = idInfo
+        infoEncoded = encodeBase64(json.dumps(info))
         coordinatorAddress = self.coordinators[getIndexFromCheck(len(self.coordinators), idInfo)]
 
-        url = f'{coordinatorAddress}/request/{infoEncoded}'
-        content = process_reply(requests.post(url))
-        return content
+        url = f'{coordinatorAddress}/{infoEncoded}'
 
-    def forwardRequest(self, url, method, id_request):
+        return requests.post(url)
+
+    def forwardRequest(self, url):
+
+        print(url)
 
         urls = list()
         for node in self.peer_nodes:
-            urls.append(f"{node}{url}")
+            urls.append(f"{node}/{url}")
+        results = send_async_request(urls)
 
-        return asyncio.new_event_loop().run_until_complete(send_requests(urls, method, {"Id-request": id_request}))
-
-    def sendCheckConsistencyMsg(self, idInfo):
-        coordinatorAddress = self.coordinators[getIndexFromCheck(len(self.coordinators), idInfo)]
-
-        url = f'{coordinatorAddress}/check_consistency'
-        content = process_reply(requests.post(url))
-        return content
+        print(urls)
+        print(results)

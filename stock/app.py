@@ -15,56 +15,37 @@ def get_item(item_id):
     return serviceNode.collection.find_one({"_id": item_id})
 
 
-responses = defaultdict(lambda: {})
-
-
-@app.before_request
-def log_request_info():
-    id_request = request.headers["Id-request"]
-
-    responses[id_request]["forward"] = "Redirect" in request.headers
-    if responses[id_request]["forward"] == True:
-
-        results = {}
-        try:
-            results = serviceNode.forwardRequest(request.path, request.method, id_request)
-        except Exception as e:
-            print(str(e), file=sys.stdout, flush=True)
-
-        responses[id_request]["results"] = results
-
-
 @app.post('/item/create/<price>')
 def create_item(price: int):
     item_id = str(getAmountOfItems(serviceNode.collection))
     serviceNode.collection.insert_one({"_id": item_id, "price": price, "stock": 0})
 
-    return response(200, item_id, request.headers['Id-request'])
+    return response(200, item_id)
 
 
 @app.get('/find/<item_id>')
 def find_item(item_id: str):
     result = serviceNode.collection.find_one({"_id": item_id})
     if result == None:
-        return response(404, "Item not found", request.headers['Id-request'])
+        return response(404, "Item not found")
 
-    return response(200, result, request.headers['Id-request'])
+    return response(200, result)
 
 
 @app.post('/add/<item_id>/<int:amount>')
 def add_stock(item_id: str, amount: int):
 
     if get_item(item_id) == None:
-        return response(404, "Item not found", request.headers['Id-request'])
+        return response(404, "Item not found")
 
     if amount < 0:
-        return response(400, "Invalid amount", request.headers['Id-request'])
+        return response(400, "Invalid amount")
 
     query = {"_id": item_id, }
     newvalues = {"$set": {"stock": amount}}
 
     serviceNode.collection.update_one(query, newvalues)
-    return response(200, "Updated", request.headers['Id-request'])
+    return response(200, "Updated")
 
 
 @app.post('/subtract/<item_id>/<int:amount>')
@@ -73,20 +54,20 @@ def remove_stock(item_id: str, amount: int):
     data_object = serviceNode.collection.find_one({"_id": item_id})
 
     if data_object == None:
-        return response(404, "Item not found", request.headers['Id-request'])
+        return response(404, "Item not found")
 
     stock = int(data_object["stock"])
     if stock < amount:
-        return response(401, "Not enough stock", request.headers['Id-request'])
+        return response(401, "Not enough stock")
 
     if amount < 0:
-        return response(400, "Invalid amount", request.headers['Id-request'])
+        return response(400, "Invalid amount")
 
     query = {"_id": item_id, }
     newvalues = {"$set": {"stock": stock-amount}}
     print(newvalues)
     serviceNode.collection.update_one(query, newvalues)
-    return response(200, "Stock substracted", request.headers['Id-request'])
+    return response(200, "Stock substracted")
 
 
 @app.post('/substract_multiple/<items_json>')
@@ -95,7 +76,7 @@ def remove_multiple_stock(items_json: str):
     try:
         items = json.loads(decodeBase64(items_json))
     except:
-        return response(500, "Invalid format", request.headers['Id-request'])
+        return response(500, "Invalid format")
 
     deleted_items = []
     for item in set(items):
@@ -105,37 +86,20 @@ def remove_multiple_stock(items_json: str):
         if json.loads(result)["status"] != 200:
             for deleted_item in deleted_items:
                 add_stock(deleted_item, amount)
-            return response(400, "No stock", request.headers['Id-request'])
+            return response(400, "No stock")
         else:
             deleted_items.append(item)
 
-    return response(200, "Done", request.headers['Id-request'])
+    return response(200, "Done")
 
 
-@app.get("/check_availability/<item_id>")
+@app.post("/check_availability/<item_id>")
 def check_availability(item_id: str):
     result = serviceNode.collection.find_one({"_id": item_id})
     if result == None:
-        return response(404, "Item not found", request.headers['Id-request'])
+        return response(404, "Item not found")
 
-    return response(200, (result["stock"], result["price"]), request.headers['Id-request'])
-
-# This is the detection of inconsistencies
-
-
-@app.after_request
-def after_request_func(returned_response):
-
-    id_request = returned_response.headers["Id-request"]
-    if responses[id_request]["forward"] is True:
-        responses[id_request]["results"].append(returned_response.get_data().decode())
-
-        if len(set(responses[id_request]["results"])) > 1:
-            serviceNode.sendCheckConsistencyMsg(id_request)
-            # Here we announce an inconsistency to the coordinator
-            pass
-
-    return returned_response
+    return response(200, (result["stock"], result["price"]))
 
 
 app.run(host=serviceNode.ip_address, port=2801)
