@@ -22,6 +22,7 @@ def preprocess():
 @app.get('/getHash')
 def getHash():
     d = serviceNode.database.command("dbHash")
+    
     return response(200, d["md5"])
 
 
