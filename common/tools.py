@@ -18,12 +18,10 @@ ID_NODE = int(sys.argv[1])
 # test if sync works from pc to container
 
 
-def response(status, text, id_request=None):
-    data_response = json.dumps({"status": status, "message": text})
+def response(status, object, id_request=None):
+    data_response = json.dumps(object)
 
     response = make_response(data_response, status)
-    response._status_code = status
-    response.status_code = status
 
     if id_request is not None:
         response.headers["Id-request"] = id_request
@@ -102,10 +100,11 @@ def request_is_read(request):
 
 
 def process_reply(data_reply, return_json=False):
+    # debug_print(data_reply.status_code)
     try:
         return data_reply.text if return_json else json.loads(data_reply.text)
     except:
-        return response(501, "Invalid URL.")
+        return response(501, {"status_code": 501})
 
 
 def debug_print(var):
