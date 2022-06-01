@@ -8,6 +8,7 @@ serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
 nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
 
+
 # Each one of the services will run an instance, run in a different port and have different clients
 
 # I want to have the address and port of the clients.
@@ -45,11 +46,10 @@ def check_consistency():
         reply = process_reply(requests.get(url))
         hash = reply.pop('message')
         responses.append(hash)
-    
+
     result = responses.count(responses[0]) == len(responses)
 
     return response(200, f"Consistency: {result}")
-
 
 
 @app.route(f'/{service}/<path:path>', methods=['POST', 'GET', 'DELETE'])
@@ -58,6 +58,9 @@ def catch_all(path):
     idRequest = getIdRequest(path)
 
     headers = {"Id-request": idRequest}
+
+    # Problem with hash, the request goes always to the same
+
     if request_is_read(request):
 
         indexNode = randint(0, len(nodesDirections)-1)

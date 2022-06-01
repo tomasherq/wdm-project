@@ -50,3 +50,42 @@ class NodeService():
         url = f'{coordinatorAddress}/check_consistency'
         content = process_reply(requests.post(url))
         return content
+
+
+responses = defaultdict(lambda: {})
+
+
+def process_before_request(request, serviceNode):
+
+    if "Id-request" in request.headers:
+        id_request = request.headers["Id-request"]
+
+        responses[id_request]["forward"] = "Redirect" in request.headers
+
+        if id_request in responses and responses[id_request]["forward"] is True:
+            response(200, "The request was already made.")
+
+        if responses[id_request]["forward"] is True:
+
+            results = {}
+            try:
+                results = serviceNode.forwardRequest(request.path, request.method, id_request)
+            except Exception as e:
+                print(str(e), file=sys.stdout, flush=True)
+
+            responses[id_request]["results"] = results
+
+
+def process_after_request(returned_response, serviceNode):
+
+    if "Id-request" in returned_response.headers:
+        id_request = returned_response.headers["Id-request"]
+        if responses[id_request]["forward"] is True:
+            responses[id_request]["results"].append(returned_response.get_data().decode())
+
+            if len(set(responses.pop(id_request))) > 1:
+                serviceNode.sendCheckConsistencyMsg(id_request)
+                # Here we announce an inconsistency to the coordinator
+                pass
+
+    return returned_response

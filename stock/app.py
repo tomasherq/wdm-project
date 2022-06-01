@@ -1,9 +1,15 @@
 from common.tools import *
-from common.node_service import NodeService
+from common.node_service import NodeService, process_before_request, process_after_request
 
 app = Flask(f"stock-service-{ID_NODE}")
 
 serviceNode = NodeService("stock")
+
+
+@app.before_request
+def preprocess():
+    return process_before_request(request, serviceNode)
+
 
 @app.get('/getHash')
 def getHash():
@@ -15,26 +21,7 @@ def get_item(item_id):
     return serviceNode.collection.find_one({"_id": item_id})
 
 
-responses = defaultdict(lambda: {})
-
-
-@app.before_request
-def log_request_info():
-    id_request = request.headers["Id-request"]
-
-    responses[id_request]["forward"] = "Redirect" in request.headers
-    if responses[id_request]["forward"] == True:
-
-        results = {}
-        try:
-            results = serviceNode.forwardRequest(request.path, request.method, id_request)
-        except Exception as e:
-            print(str(e), file=sys.stdout, flush=True)
-
-        responses[id_request]["results"] = results
-
-
-@app.post('/item/create/<price>')
+@app.post('/item/create/<int:price>')
 def create_item(price: int):
     item_id = str(getAmountOfItems(serviceNode.collection))
     serviceNode.collection.insert_one({"_id": item_id, "price": price, "stock": 0})
@@ -125,17 +112,7 @@ def check_availability(item_id: str):
 
 @app.after_request
 def after_request_func(returned_response):
-
-    id_request = returned_response.headers["Id-request"]
-    if responses[id_request]["forward"] is True:
-        responses[id_request]["results"].append(returned_response.get_data().decode())
-
-        if len(set(responses[id_request]["results"])) > 1:
-            serviceNode.sendCheckConsistencyMsg(id_request)
-            # Here we announce an inconsistency to the coordinator
-            pass
-
-    return returned_response
+    return process_after_request(returned_response, serviceNode)
 
 
 app.run(host=serviceNode.ip_address, port=2801)

@@ -1,6 +1,6 @@
 
 from common.tools import *
-from common.node_service import NodeService
+from common.node_service import NodeService, process_before_request, process_after_request
 import sys
 import logging
 from common.async_calls import send_requests, asyncio
@@ -13,29 +13,16 @@ logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.
 
 serviceNode = NodeService("order")
 
-responses = defaultdict(lambda: {})
+
+@app.before_request
+def preprocess():
+    return process_before_request(request, serviceNode)
 
 
 @app.get('/getHash')
 def getHash():
     d = serviceNode.database.command("dbHash")
     return response(200, d["md5"])
-
-
-@app.before_request
-def log_request_info():
-    id_request = request.headers["Id-request"]
-
-    responses[id_request]["forward"] = "Redirect" in request.headers
-    if responses[id_request]["forward"] == True:
-
-        results = {}
-        try:
-            results = serviceNode.forwardRequest(request.path, request.method, id_request)
-        except Exception as e:
-            print(str(e), file=sys.stdout, flush=True)
-
-        responses[id_request]["results"] = results
 
 
 def get_order(order_id):
@@ -51,6 +38,7 @@ def ping_service():
 @ app.post('/create/<user_id>')
 def create_order(user_id):
     order_id = str(getAmountOfItems(serviceNode.collection))
+
     serviceNode.collection.insert_one({"_id": order_id,  "paid": False,
                                       "items": [], "user": user_id, "total_cost": 0})
     app.logger.info(f"Created order with orderid: {order_id} and userid: {user_id}.")
@@ -175,17 +163,7 @@ def checkout(order_id):
 
 @app.after_request
 def after_request_func(returned_response):
-
-    id_request = returned_response.headers["Id-request"]
-    if responses[id_request]["forward"] is True:
-        responses[id_request]["results"].append(returned_response.get_data().decode())
-
-        if len(set(responses[id_request]["results"])) > 1:
-            serviceNode.sendCheckConsistencyMsg(id_request)
-            # Here we announce an inconsistency to the coordinator
-            pass
-
-    return returned_response
+    return process_after_request(returned_response, serviceNode)
 
 
 app.run(host=serviceNode.ip_address, port=2801)
