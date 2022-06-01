@@ -41,7 +41,7 @@ def create_order(user_id):
     order_id = request.headers["Id-object"]
 
     serviceNode.collection.insert_one({"_id": order_id,  "paid": False,
-                                      "items": [], "user": user_id, "total_cost": 0})
+                                      "items": [], "user": user_id, "total_cost": 0.0})
     app.logger.info(f"Created order with orderid: {order_id} and userid: {user_id}.")
     return response(200, {'status_code': 200, 'order_id': order_id}, request.headers['Id-request'])
 
@@ -73,12 +73,12 @@ def add_item(order_id, item_id):
 
     if item_info['stock'] == 0:
         app.logger.error(f"No stock for item with itemid: {item_id}")
-        return response(400, {'status_code': 400, 'message': "No stock"}, request.headers['Id-request'])
+        return response(400, {'status_code': 400, 'message': "No stock for this item"}, request.headers['Id-request'])
 
     items = order["items"]
     items.append(item_id)
 
-    newvalues = {"$set": {"items": items, "total_cost": order["total_cost"] + int(item_info['price'])}}
+    newvalues = {"$set": {"items": items, "total_cost": order["total_cost"] + float(item_info['price'])}}
     serviceNode.collection.update_one({"_id": order_id}, newvalues)
     app.logger.info(f"Successfully added item with itemid: {item_id} to order with orderid: {order_id}.")
 
@@ -108,7 +108,6 @@ def remove_item(order_id, item_id):
 @ app.get('/find/<order_id>')
 def find_order(order_id: str):
     result = get_order(order_id)
-    debug_print(result)
     if result == None:
         app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, {'status_code': 404, 'message': "Order not found"}, request.headers['Id-request'])
@@ -125,9 +124,8 @@ def checkout(order_id):
         app.logger.error(f"Order with orderid: {order_id} is already paid.")
 
         return response(402, {'status_code': 402, 'message': "Order already paid"}, request.headers['Id-request'])
-
     # This is to have the order done!
-    url = f'/pay/{result["user"]}/{order_id}/{result["total_cost"]}'
+    url = f'/pay/{result["user"]}/{order_id}/{float(result["total_cost"])}'
 
     pay_info = serviceNode.sendMessageCoordinator(url, "payment", "POST")
     app.logger.info(f"Sending payment information to serviceNode.coordinators: {serviceNode.coordinators}.")
@@ -149,7 +147,7 @@ def checkout(order_id):
 
     if stock_status != 200:
         # Reimburse payment
-        url = f'/add_funds/{result["user"]}/{result["total_cost"]}'
+        url = f'/add_funds/{result["user"]}/{float(result["total_cost"])}'
         pay_info = serviceNode.sendMessageCoordinator(url, "payment", "POST")
         app.logger.info(f"Not enough stock! Reimburse payment for order with orderid: {order_id}.")
         return response(501, {'status_code': 501, 'message': "Not enough stock for the request"}, request.headers['Id-request'])

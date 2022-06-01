@@ -61,7 +61,7 @@ def process_before_request(request, serviceNode):
         id_request = request.headers["Id-request"]
 
         if id_request in responses and responses[id_request]["forward"] is True:
-            return response(200, {"status_code": 200, "message": "The request was already made."})
+            return response(200, {'status_code': 200, 'message': "The request was already made."})
 
         responses[id_request]["forward"] = "Redirect" in request.headers
         if responses[id_request]["forward"] is True:
