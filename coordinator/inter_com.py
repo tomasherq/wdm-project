@@ -1,7 +1,10 @@
 from common.tools import *
+from common.coordinator import *
 
-from collections import defaultdict
+from collections import defaultdict, Counter 
 import time
+
+DEBUG=True
 
 
 serviceID = sys.argv[2]
@@ -67,10 +70,50 @@ def catch_all(request_info):
     return replies[idRequest]['content']
 
 
-@app.post('/check_consistency')
-def check_consistency():
-    # This is the place where the node calls if there is an inconsistency
-    return response(200, "Is fixed now")
+@app.post('/fix_consistency')
+def fix_consistency():
+
+    nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
+
+    ip_addr = request.remote_addr
+    if ip_addr in nodesDirections:
+        return response(403, "Not authorized.")
+    
+    # get all hashes of databases with the corresponding node directions
+    node_dir, responses = get_hash(nodesDirections)
+    
+    #remove this
+    #responses = ['d41d8cd98f00b204e9800998ecf8427e', 'd41d8cd98f00b204e9800998ecf8427r', 'd41d8cd98f00b204e9800998ecf8427r']
+
+    # find the most common hash
+    counter_responses = Counter(responses)
+    common_hash = max(responses,key=responses.count)
+    times_common_hash = counter_responses[common_hash]
+
+    # check if more than one databases have the same common hash
+    count = 0
+    for ele in counter_responses:
+        if counter_responses[ele] == times_common_hash:
+            count=count+1
+    count = 10 #remove this
+    if count <= 1:
+        debug_print("We found the most common hash. This is the variable common_hash")
+        # find the consistent and inconsistent nodes
+        consistent_nodes = []
+        inconsistent_nodes = []
+        for n in range(len(node_dir)):
+            if responses[n] == common_hash:
+                consistent_nodes.append(node_dir[n])
+            else:
+                inconsistent_nodes.append(node_dir[n])
+        debug_print(consistent_nodes)
+        debug_print(inconsistent_nodes)
+    else:
+        debug_print("Need to check time of last update")
+        
+    
+    
+    return response(200, "Consistency is fixed now")
 
 
 app.run(host=getIPAddress(f"{serviceID}_COORD_ADDRESS"), port=2802)

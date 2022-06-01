@@ -47,7 +47,7 @@ class NodeService():
     def sendCheckConsistencyMsg(self, idInfo):
         coordinatorAddress = self.coordinators[getIndexFromCheck(len(self.coordinators), idInfo)]
 
-        url = f'{coordinatorAddress}/check_consistency'
+        url = f'{coordinatorAddress}/fix_consistency'
         content = process_reply(requests.post(url))
         return content
 

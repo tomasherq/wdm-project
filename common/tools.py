@@ -64,9 +64,13 @@ def response(status, object, id_request=None):
     data_response = json.dumps(object)
 
     response = make_response(data_response, status)
-
+    response._status_code = status
+    response.status_code = status
+    
     if id_request is not None:
         response.headers["Id-request"] = id_request
+
+    
     return response
 
 
@@ -140,6 +144,8 @@ def request_is_read(request):
 
 
 def process_reply(data_reply, return_raw=False):
+
+    debug_print(data_reply)
     try:
         return data_reply.text if return_raw else json.loads(data_reply.text)
     except:
