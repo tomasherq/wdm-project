@@ -141,7 +141,7 @@ def process_reply(data_reply, return_raw=False):
     try:
         return data_reply.text if return_raw else json.loads(data_reply.text)
     except:
-        return {"status": 501, "message": "Invalid URL."}
+        return {"status_code": 501, "message": "Invalid URL."}
 
 
 def debug_print(var):

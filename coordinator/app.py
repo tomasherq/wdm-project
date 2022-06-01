@@ -73,11 +73,8 @@ def catch_all(path):
     url = f'{nodeDir}/{path}'
 
     reply = process_reply(requests.request(request.method, url, headers=headers))
-    try:
-        return response(reply["status_code"], reply)
-    except:
-        return reply
 
+    return response(reply["status_code"], reply)
 
 
 app.run(host=getIPAddress(f"{serviceID}_COORD_ADDRESS"), port=2801)
