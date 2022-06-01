@@ -22,9 +22,11 @@ def preprocess():
 @app.get('/getHash')
 def getHash():
     d = serviceNode.database.command("dbHash")
+    last_update = list(serviceNode.collection.collection.find().sort("timestamp",-1))[0]
+    timestamp = last_update.get('timestamp')
     
-    return response(200, d["md5"])
-
+    return response(200, {'hash': d["md5"], 'timestamp': timestamp})
+    
 
 def get_order(order_id):
     return serviceNode.collection.find_one({"_id": order_id})
