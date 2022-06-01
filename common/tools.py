@@ -8,6 +8,7 @@ import math
 from flask import Flask, request, make_response
 from hashlib import md5
 from collections import defaultdict
+import time
 
 # test if sync works
 
@@ -21,21 +22,26 @@ class CollectionWrapperMongo():
     '''The pourpose of this function is enabiling logging of the information.
     '''
 
-    def __init__(self, collection, service):
+    def __init__(self, collection, service, logging=False):
         self.collection = collection
         self.log_file_name = f"/var/log/{service}-{ID_NODE}.ndjson"
+        self.logging = logging
 
     def log_request(self, information):
 
-        with open(self.log_file_name, "a") as file:
-            file.write(json.dumps(information))
-            file.write("\n")
+        if self.logging is True:
+
+            with open(self.log_file_name, "a") as file:
+                file.write(json.dumps(information))
+                file.write("\n")
 
     def update_one(self, update_object, newvalues):
         self.log_request({"request_type": "update_object", "update_id": update_object, "newvalues": newvalues})
         return self.collection.update_one(update_object, newvalues)
 
     def insert_one(self, insert_object):
+
+        insert_object["timestamp"] = time.time()
         self.log_request({"request_type": "insert", "object": insert_object})
         return self.collection.insert_one(insert_object)
 
@@ -69,13 +75,9 @@ def getDatabase(database_name):
     return client[database_name]
 
 
-def getCollection(database, collection_name, use_wrapper=False):
+def getCollection(database, collection_name):
 
-    collection = database[collection_name]
-    if use_wrapper is True:
-        CollectionWrapperMongo(collection, collection_name)
-
-    return collection
+    return CollectionWrapperMongo(database[collection_name], collection_name)
 
 
 def getAmountOfItems(collection):
