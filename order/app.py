@@ -55,7 +55,6 @@ def create_order(user_id):
     serviceNode.collection.insert_one({"_id": order_id,  "paid": False,
                                       "items": [], "user": user_id, "total_cost": 0})
     app.logger.info(f"Created order with orderid: {order_id} and userid: {user_id}.")
-    # return response(200, f"Correctly added, orderid {order_id}", request.headers['Id-request'])
     return response(200, {'status_code': 200, 'order_id': order_id}, request.headers['Id-request'])
 
 
@@ -121,11 +120,13 @@ def remove_item(order_id, item_id):
 @ app.get('/find/<order_id>')
 def find_order(order_id: str):
     result = get_order(order_id)
+    debug_print(result)
     if result == None:
         app.logger.error(f"Order with orderid: {order_id} was not found.")
         return response(404, {'status_code': 404, 'message': "Order not found"}, request.headers['Id-request'])
     app.logger.info(f"Successfully retrieved order with orderid {order_id}.")
-    return response(200, {'status_code': 200}, request.headers['Id-request'])
+    return response(200, {'status_code': 200, 'order_id': order_id, 'paid': result['paid'], 'items': result['items'], \
+            'user_id': result['user'],'total_cost': result['total_cost']}, request.headers['Id-request'])
 
 
 @ app.post('/checkout/<order_id>')
