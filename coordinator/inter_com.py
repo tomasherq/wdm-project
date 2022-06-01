@@ -6,7 +6,7 @@ import time
 
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}-internal")
-
+DEBUG = True
 # Each one of the services will run an instance, run in a different port and have different clients
 
 # I want to have the address and port of the clients.
@@ -19,7 +19,7 @@ nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
 def check_address_node():
 
     dir_node = "http://"+request.remote_addr+":2801"
-    if dir_node not in nodesDirections:
+    if dir_node not in nodesDirections and not DEBUG:
 
         return response(403, "Not authorized.")
 

@@ -1,7 +1,9 @@
+from common.node_service import NodeService
+from flask import jsonify
+from common.node_service import NodeService, process_before_request, process_after_request
 from responses import Response
 from common.tools import *
-from flask import jsonify
-from common.node_service import NodeService
+
 
 app = Flask(f"payment-service-{ID_NODE}")
 
@@ -9,6 +11,12 @@ app = Flask(f"payment-service-{ID_NODE}")
 serviceNode = NodeService("payment")
 
 # TODO:Remove all non used stuff from functions
+
+
+@app.before_request
+def preprocess():
+    return process_before_request(request, serviceNode)
+
 
 @app.get('/getHash')
 def getHash():
@@ -38,25 +46,6 @@ def helper_find_order(order_id):
     return order_collection
 
 
-responses = defaultdict(lambda: {})
-
-
-@app.before_request
-def log_request_info():
-    id_request = request.headers["Id-request"]
-
-    responses[id_request]["forward"] = "Redirect" in request.headers
-    if responses[id_request]["forward"] == True:
-
-        results = {}
-        try:
-            results = serviceNode.forwardRequest(request.path, request.method, id_request)
-        except Exception as e:
-            print(str(e), file=sys.stdout, flush=True)
-
-        responses[id_request]["results"] = results
-
-
 @app.post('/create_user')
 def create_user():
     user_id = str(getAmountOfItems(serviceNode.collection))
@@ -77,7 +66,6 @@ def add_credit(user_id: str, amount: int):
     user_object = helper_find_user(user_id)
     if type(user_object) is Response:
         return user_object
-    print(user_object)
 
     user_credit = int(user_object["credit"])
 
@@ -94,7 +82,7 @@ def remove_credit(user_id: str, order_id: str, amount: int):
     user_object = helper_find_user(user_id)
     if type(user_object) is Response:
         return user_object
-    
+
     user_credit = int(user_object["credit"])
     if user_credit < amount:
         return response(401, {'status_code': 401, 'message': "Not enough credit"}, request.headers['Id-request'])
@@ -119,21 +107,11 @@ def payment_status(user_id: str, order_id: str):
     order_status = order_collection["paid"]
 
     return response(200, {"status_code": 200, "paid": order_status}, request.headers['Id-request'])
- 
+
 
 @app.after_request
 def after_request_func(returned_response):
-
-    id_request = returned_response.headers["Id-request"]
-    if responses[id_request]["forward"] is True:
-        responses[id_request]["results"].append(returned_response.get_data().decode())
-
-        if len(set(responses[id_request]["results"])) > 1:
-            serviceNode.sendCheckConsistencyMsg(id_request)
-            # Here we announce an inconsistency to the coordinator
-            pass
-
-    return returned_response
+    return process_after_request(returned_response, serviceNode)
 
 
 app.run(host=serviceNode.ip_address, port=2801)
