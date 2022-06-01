@@ -70,6 +70,9 @@ def catch_all(path):
 
     nodeDir = nodesDirections[indexNode]
 
+    idObject = getIdRequest(str(time.time())+"-"+nodeDir)
+    headers["Id-object"] = idObject
+
     url = f'{nodeDir}/{path}'
 
     reply = process_reply(requests.request(request.method, url, headers=headers))

@@ -36,13 +36,13 @@ class NodeService():
         content = process_reply(requests.post(url))
         return content
 
-    def forwardRequest(self, url, method, id_request):
+    def forwardRequest(self, url, method, headers):
 
         urls = list()
         for node in self.peer_nodes:
             urls.append(f"{node}{url}")
 
-        return asyncio.new_event_loop().run_until_complete(send_requests(urls, method, {"Id-request": id_request}))
+        return asyncio.new_event_loop().run_until_complete(send_requests(urls, method, headers))
 
     def sendCheckConsistencyMsg(self, idInfo):
         coordinatorAddress = self.coordinators[getIndexFromCheck(len(self.coordinators), idInfo)]
@@ -60,16 +60,17 @@ def process_before_request(request, serviceNode):
     if "Id-request" in request.headers:
         id_request = request.headers["Id-request"]
 
-        responses[id_request]["forward"] = "Redirect" in request.headers
-
         if id_request in responses and responses[id_request]["forward"] is True:
-            response(200, "The request was already made.")
+            return response(200, {"status_code": 200, "message": "The request was already made."})
 
+        responses[id_request]["forward"] = "Redirect" in request.headers
         if responses[id_request]["forward"] is True:
+
+            headers = {"Id-object": request.headers["Id-object"], "Id-request": id_request}
 
             results = {}
             try:
-                results = serviceNode.forwardRequest(request.path, request.method, id_request)
+                results = serviceNode.forwardRequest(request.path, request.method, headers)
             except Exception as e:
                 print(str(e), file=sys.stdout, flush=True)
 
@@ -87,5 +88,4 @@ def process_after_request(returned_response, serviceNode):
                 serviceNode.sendCheckConsistencyMsg(id_request)
                 # Here we announce an inconsistency to the coordinator
                 pass
-
     return returned_response

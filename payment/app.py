@@ -48,7 +48,7 @@ def helper_find_order(order_id):
 
 @app.post('/create_user')
 def create_user():
-    user_id = str(getAmountOfItems(serviceNode.collection))
+    user_id = request.headers["Id-object"]
     serviceNode.collection.insert_one({"_id": user_id, "credit": 0})
     return response(200, {"status_code": 200, "user_id": user_id}, request.headers['Id-request'])
 

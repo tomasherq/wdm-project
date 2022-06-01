@@ -37,7 +37,7 @@ def ping_service():
 
 @ app.post('/create/<user_id>')
 def create_order(user_id):
-    order_id = str(getAmountOfItems(serviceNode.collection))
+    order_id = request.headers["Id-object"]
 
     serviceNode.collection.insert_one({"_id": order_id,  "paid": False,
                                       "items": [], "user": user_id, "total_cost": 0})
