@@ -139,9 +139,9 @@ def request_is_read(request):
     return "check_availability" in request.path or request.method == "GET" or "/status" in request.path
 
 
-def process_reply(data_reply, return_json=False):
+def process_reply(data_reply, return_raw=False):
     try:
-        return data_reply.text if return_json else json.loads(data_reply.text)
+        return data_reply.text if return_raw else json.loads(data_reply.text)
     except:
         return {"status": 501, "message": "Invalid URL."}
 
