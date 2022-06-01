@@ -141,6 +141,10 @@ class TestMicroservices(unittest.TestCase):
         credit: int = tu.find_user(user_id)['credit']
         self.assertEqual(credit, 5)
 
+        cost: int = tu.find_order(order_id)['total_cost']
+        self.assertEqual(cost, 10)
+
+
 
 if __name__ == '__main__':
     unittest.main()

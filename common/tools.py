@@ -54,16 +54,14 @@ class CollectionWrapperMongo():
         return self.collection.drop()
 
 
-def response(status, text, id_request=None):
-    data_response = json.dumps({"status": status, "message": text})
+def response(status, object, id_request=None):
+    data_response = json.dumps(object)
 
-    response_msg = make_response(data_response, status)
-    response_msg._status_code = status
-    response_msg.status_code = status
+    response = make_response(data_response, status)
 
     if id_request is not None:
-        response_msg.headers["Id-request"] = id_request
-    return response_msg
+        response.headers["Id-request"] = id_request
+    return response
 
 
 def getDatabase(database_name):
