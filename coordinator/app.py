@@ -3,6 +3,7 @@ import sys
 from random import randint
 
 from common.tools import *
+from common.coordinator import *
 
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
@@ -39,14 +40,9 @@ def check_consistency():
 
     if ip_addr in nodesDirections:
         return response(403, "Not authorized.")
-    responses = []
-    url = ''
-    for nodeDir in nodesDirections:
-        url = f'{nodeDir}/getHash'
-        reply = process_reply(requests.get(url))
-        hash = reply.pop('message')
-        responses.append(hash)
 
+    node_dir, responses = get_hash(nodesDirections)
+    
     result = responses.count(responses[0]) == len(responses)
 
     return response(200, f"Consistency: {result}")
