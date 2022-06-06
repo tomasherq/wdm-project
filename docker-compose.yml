@@ -108,6 +108,7 @@ services:
         volumes:
             - ./coordinator:/app/coordinator
             - ./common:/app/coordinator/common
+            - ./coordinator/nodes_info:/app/coordinator/nodes_info
         command: bash -c "cd coordinator/common/ && bash execution.sh 1 ORDER"
         ports:
             - 1107:2801

@@ -15,9 +15,14 @@ import time
 # PASSWORD = os.environ.get('MONGO_PASSWORD')
 PREFIX_IP = os.environ.get("PREFIX_IP")
 ID_NODE = int(sys.argv[1])
+RECOVERY_RESPONSE = "In recovery mode."
 
+# Maybe we should check if the reply from Mongo is successful?
+# Or we could not notify the user, just enqueue. Will be succesful until queried again
 
 # Extra feature that can be used for consistency.
+
+
 class CollectionWrapperMongo():
     '''The pourpose of this function is enabiling logging of the information.
     '''
@@ -26,6 +31,8 @@ class CollectionWrapperMongo():
         self.collection = collection
         self.log_file_name = f"/var/log/{service}-{ID_NODE}.ndjson"
         self.logging = logging
+        self.recovery_mode = False
+        self.request_queue = list()
 
     def log_request(self, information):
 
@@ -35,18 +42,67 @@ class CollectionWrapperMongo():
                 file.write(json.dumps(information))
                 file.write("\n")
 
+    def enqueue(self, request_object):
+        self.request_queue.append(request_object)
+
+    def is_queue_empty(self):
+        return len(self.request_queue) == 0
+
+    def process_queue(self):
+
+        # This will execute the recovery
+        if not self.is_queue_empty():
+            while len(self.request_queue) > 0:
+                request_to_process = self.request_queue.pop(0)
+
+                request_type = request_to_process["request_type"]
+                try:
+                    if request_type == "update_object":
+                        self.collection.update_one(request_to_process["update_id"], request_to_process["newvalues"])
+                    elif request_type == "insert":
+                        self.collection.insert_one(request_to_process["object"])
+                    elif request_type == "delete":
+                        self.collection.delete_one(request_to_process["object"])
+                except Exception as e:
+                    # If we find an error we notify it
+                    self.request_queue.append(request_to_process)
+                    return str(e)
+        # This is so that the return is homogeneous
+        self.recovery_mode = False
+        return "Success"
+
     def update_one(self, update_object, newvalues):
-        self.log_request({"request_type": "update_object", "update_id": update_object, "newvalues": newvalues})
+
+        request_object = {"request_type": "update_object", "update_id": update_object, "newvalues": newvalues}
+
+        if self.recovery_mode:
+            self.enqueue(request_object)
+            return RECOVERY_RESPONSE
+
+        self.log_request(request_object)
+
         return self.collection.update_one(update_object, newvalues)
 
     def insert_one(self, insert_object):
 
         insert_object["timestamp"] = time.time()
-        self.log_request({"request_type": "insert", "object": insert_object})
+        request_object = {"request_type": "insert", "object": insert_object}
+        if self.recovery_mode:
+            self.enqueue(request_object)
+            return RECOVERY_RESPONSE
+
+        self.log_request(request_object)
         return self.collection.insert_one(insert_object)
 
     def delete_one(self, delete_object):
-        self.log_request({"request_type": "delete", "object": delete_object})
+
+        request_object = {"request_type": "delete", "object": delete_object}
+
+        if self.recovery_mode:
+            self.enqueue(request_object)
+            return RECOVERY_RESPONSE
+
+        self.log_request(request_object)
         return self.collection.delete_one(delete_object)
 
     def find_one(self, request_object):
@@ -66,11 +122,10 @@ def response(status, object, id_request=None):
     response = make_response(data_response, status)
     response._status_code = status
     response.status_code = status
-    
+
     if id_request is not None:
         response.headers["Id-request"] = id_request
 
-    
     return response
 
 
@@ -145,7 +200,6 @@ def request_is_read(request):
 
 def process_reply(data_reply, return_raw=False):
 
-    debug_print(data_reply)
     try:
         return data_reply.text if return_raw else json.loads(data_reply.text)
     except:

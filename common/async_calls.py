@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 import json
 import sys
+from time import time
 
 
 async def gather_with_concurrency(n, *tasks):
@@ -26,8 +27,14 @@ async def gather_with_concurrency(n, *tasks):
             JSON: Results from the execution
         '''
         async with semaphore:
-            return await task
+            try:
+                result = await task
+            except Exception as e:
+
+                return json.dumps({"host": str(e.host), "port": str(e.port)})
+            return result
     # * is to unpack the tuple so the gather function can be correctly used
+
     return await asyncio.gather(*(sem_task(task) for task in tasks))
 
 
@@ -46,6 +53,5 @@ async def send_requests(urls, method, headers):
     conc_req = len(urls)
 
     results = await gather_with_concurrency(conc_req, *[request_async(url, session, method, headers) for url in urls])
-
     await session.close()
     return results

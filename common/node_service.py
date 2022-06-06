@@ -17,6 +17,10 @@ class NodeService():
         self.coordinators = getAddresses(f"{self.service}_COORD_ADDRESS", 2802)
         self.peer_nodes = getAddresses(f"{self.service}_NODES_ADDRESS")
 
+        self.peer_nodes.append("http://192.168.124.200:2801")
+
+        self.isInRecover = False
+
         self.peer_nodes.remove("http://"+self.ip_address+":2801")
 
         self.dropCollection()
@@ -44,10 +48,14 @@ class NodeService():
 
         return asyncio.new_event_loop().run_until_complete(send_requests(urls, method, headers))
 
-    def sendCheckConsistencyMsg(self, idInfo):
+    def sendFixConsistencyMsg(self, idInfo, nodes_down_report):
+
+        debug_print("Quw?")
         coordinatorAddress = self.coordinators[getIndexFromCheck(len(self.coordinators), idInfo)]
 
-        url = f'{coordinatorAddress}/fix_consistency'
+        nodes_down = encodeBase64(json.dumps(nodes_down_report))
+
+        url = f'{coordinatorAddress}/fix_consistency/{nodes_down}'
         content = process_reply(requests.post(url))
         return content
 
@@ -79,13 +87,28 @@ def process_before_request(request, serviceNode):
 
 def process_after_request(returned_response, serviceNode):
 
+    # This is to start the recovery
+    if (serviceNode.isInRecover or serviceNode.collection.is_queue_empty()) is False:
+        serviceNode.collection.process_queue()
+
     if "Id-request" in returned_response.headers:
         id_request = returned_response.headers["Id-request"]
         if responses[id_request]["forward"] is True:
             responses[id_request]["results"].append(returned_response.get_data().decode())
 
-            if len(set(responses.pop(id_request))) > 1:
-                serviceNode.sendCheckConsistencyMsg(id_request)
+            unique_responses = set(responses.pop(id_request)["results"])
+            if len(unique_responses) > 1:
+
+                for response_node in unique_responses:
+
+                    nodes_down_report = []
+
+                    if "host" in response_node and "port" in response_node:
+                        response_node = json.loads(response_node)
+                        node_down = f'http://{response_node["host"]}:{response_node["port"]}'
+                        nodes_down_report.append(node_down)
+                serviceNode.sendFixConsistencyMsg(id_request, nodes_down_report)
                 # Here we announce an inconsistency to the coordinator
                 pass
+
     return returned_response

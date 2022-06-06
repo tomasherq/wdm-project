@@ -8,7 +8,7 @@ from common.coordinator import *
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
 nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
-
+nodesUp = nodesDirections
 
 # Each one of the services will run an instance, run in a different port and have different clients
 
@@ -26,7 +26,8 @@ if service == "order":
 
 
 @app.before_request
-def check_address_node():
+def load_up_nodes():
+    nodesUp = get_up_nodes(nodesDirections, serviceID)
     if request.remote_addr in nodesDirections:
         return response(403, "Not authorized.")
 
@@ -34,15 +35,8 @@ def check_address_node():
 @app.get('/consistency')
 def check_consistency():
 
-    nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
+    node_dir, responses = get_hash(nodesUp)
 
-    ip_addr = request.remote_addr
-
-    if ip_addr in nodesDirections:
-        return response(403, "Not authorized.")
-
-    node_dir, responses = get_hash(nodesDirections)
-    
     result = responses.count(responses[0]) == len(responses)
 
     return response(200, f"Consistency: {result}")
@@ -59,12 +53,12 @@ def catch_all(path):
 
     if request_is_read(request):
 
-        indexNode = randint(0, len(nodesDirections)-1)
+        indexNode = randint(0, len(nodesUp)-1)
     else:
         headers["Redirect"] = "1"
-        indexNode = getIndexFromCheck(len(nodesDirections), idRequest)
+        indexNode = getIndexFromCheck(len(nodesUp), idRequest)
 
-    nodeDir = nodesDirections[indexNode]
+    nodeDir = nodesUp[indexNode]
 
     idObject = getIdRequest(str(time.time())+"-"+nodeDir)
     headers["Id-object"] = idObject
