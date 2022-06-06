@@ -14,6 +14,10 @@ logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.
 serviceNode = NodeService("order")
 
 
+def get_order(order_id):
+    return serviceNode.collection.find_one({"_id": order_id})
+
+
 @app.before_request
 def preprocess():
     return process_before_request(request, serviceNode)
@@ -21,20 +25,23 @@ def preprocess():
 
 @app.get('/getHash')
 def getHash():
-    d = serviceNode.database.command("dbHash")
-    last_update = list(serviceNode.collection.collection.find().sort("timestamp", -1))[0]
-    timestamp = last_update.get('timestamp')
-
-    return response(200, {'hash': d["md5"], 'timestamp': timestamp})
+    return serviceNode.getHash()
 
 
-def get_order(order_id):
-    return serviceNode.collection.find_one({"_id": order_id})
+@app.get('/alive')
+def alive():
+    return response(200, {"alive": serviceNode.full_address})
+
+
+@app.post('/remove_nodes/<nodes_down>')
+def remove_nodes_api(nodes_down: str):
+    reply = serviceNode.remove_peer_nodes(nodes_down)
+
+    return response(200, {"message": reply})
 
 
 @ app.route('/')
 def ping_service():
-
     return json.dumps(serviceNode.coordinators)
 
 

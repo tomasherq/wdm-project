@@ -171,6 +171,7 @@ def getIdRequest(sentence):
 def getIndexFromCheck(nNodes, md5Id):
 
     # LIMITATION: Same order executed will get the same Id, so it might be that a node is overloaded....
+
     checkNum = ''
     for i in md5Id:
         if i.isdigit():
@@ -198,8 +199,18 @@ def request_is_read(request):
     return "check_availability" in request.path or request.method == "GET" or "/status" in request.path
 
 
+def make_request(method, url, headers):
+
+    try:
+        return requests.request(method, url, headers=headers)
+    except Exception:
+        return {"status_code": 505, "message": "Invalid URL."}
+
+
 def process_reply(data_reply, return_raw=False):
 
+    if isinstance(data_reply, dict) and "status_code" in data_reply and data_reply["status_code"] == 505:
+        return data_reply
     try:
         return data_reply.text if return_raw else json.loads(data_reply.text)
     except:

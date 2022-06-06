@@ -5,6 +5,8 @@ import json
 import sys
 from time import time
 
+from common.tools import debug_print
+
 
 async def gather_with_concurrency(n, *tasks):
     '''_summary_
@@ -30,6 +32,7 @@ async def gather_with_concurrency(n, *tasks):
             try:
                 result = await task
             except Exception as e:
+                debug_print(e)
 
                 return json.dumps({"host": str(e.host), "port": str(e.port)})
             return result
@@ -39,13 +42,13 @@ async def gather_with_concurrency(n, *tasks):
 
 
 async def request_async(url, session, method, headers):
+
     async with session.request(method, url, headers=headers) as response:
         text = await response.text()
         return text
 
 
 async def send_requests(urls, method, headers):
-
     # TCP connection object
     conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
     # Used to create the session object
@@ -53,5 +56,6 @@ async def send_requests(urls, method, headers):
     conc_req = len(urls)
 
     results = await gather_with_concurrency(conc_req, *[request_async(url, session, method, headers) for url in urls])
+
     await session.close()
     return results

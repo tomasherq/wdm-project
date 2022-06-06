@@ -1,5 +1,5 @@
 from common.tools import *
-from common.coordinator import *
+from common.coordinator_service import *
 
 from collections import defaultdict, Counter
 import time
@@ -15,15 +15,14 @@ DEBUG = True
 # I want to have the address and port of the clients.
 
 replies = defaultdict(lambda: {})
-nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
-nodesUp = nodesDirections
+coordinatorService = CoordinatorService(serviceID)
 
 
 @app.before_request
 def check_address_node():
-    nodesUp = get_up_nodes(nodesDirections, serviceID)
+    coordinatorService.loadUpNodes("inter")
     dir_node = "http://"+request.remote_addr+":2801"
-    if dir_node not in nodesUp and not DEBUG:
+    if dir_node not in coordinatorService.nodesUp and not DEBUG:
 
         return response(403, "Not authorized.")
 
@@ -56,7 +55,7 @@ def catch_all(request_info):
             time.sleep(0.1)
 
         content = replies[idRequest]['content']
-        if replies[idRequest]["counter"] == len(nodesUp):
+        if replies[idRequest]["counter"] == len(coordinatorService.nodesUp):
             replies.pop(idRequest, None)
 
         return content
@@ -71,20 +70,26 @@ def catch_all(request_info):
     return replies[idRequest]['content']
 
 
-@app.post('/fix_consistency/<nodes_down>')
-def fix_consistency(nodes_down: str):
+@app.post('/down_nodes/<nodes_down_raw>')
+def report_down_nodes(nodes_down_raw: str):
+    nodes_down = json.loads(decodeBase64(nodes_down_raw))
 
-    nodes_down = json.loads(decodeBase64(nodes_down))
+    # This one has to report to the other one, we can do this with a file actually
 
     if len(nodes_down) > 0:
-        save_nodes_down(nodes_down, serviceID)
-        nodesUp = list(set(nodesDirections)-set(nodes_down))
-    else:
-        delete_nodes_down(serviceID)
-        nodesUp = nodesDirections
+        coordinatorService.removeNodes(nodes_down)
 
-    # get all hashes of databases with the corresponding node directions
-    node_dir, responses = get_hash(nodesUp)
+        if int(request.headers["Forwarding-coordinator"]) == ID_NODE:
+
+            coordinatorService.sendRemoveNodes(nodes_down_raw)
+    return response(200, {"msg": "Nodes fixed"})
+
+
+@app.post('/fix_consistency')
+def fix_consistency():
+
+    # Get all hashes of databases with the corresponding node directions
+    node_dir, responses = get_hash(coordinatorService.nodesUp)
 
     hashes = list()
     for item in responses:
@@ -130,10 +135,7 @@ def fix_consistency(nodes_down: str):
         inconsistent_nodes = node_dir
         inconsistent_nodes.remove(node_last_updated)
 
-    debug_print(consistent_nodes)
-    debug_print(inconsistent_nodes)
-
-    return response(200, "Consistency is fixed now")
+    return response(200, {"msg": "Consistency is fixed now"})
 
 
 app.run(host=getIPAddress(f"{serviceID}_COORD_ADDRESS"), port=2802)

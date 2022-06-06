@@ -17,11 +17,12 @@ class NodeService():
         self.coordinators = getAddresses(f"{self.service}_COORD_ADDRESS", 2802)
         self.peer_nodes = getAddresses(f"{self.service}_NODES_ADDRESS")
 
-        self.peer_nodes.append("http://192.168.124.200:2801")
-
         self.isInRecover = False
 
+        self.full_address = f"http://"+self.ip_address+":2801"
+
         self.peer_nodes.remove("http://"+self.ip_address+":2801")
+        self.peer_nodes.append("http://192.168.124.200:2801")
 
         self.dropCollection()
 
@@ -48,16 +49,48 @@ class NodeService():
 
         return asyncio.new_event_loop().run_until_complete(send_requests(urls, method, headers))
 
-    def sendFixConsistencyMsg(self, idInfo, nodes_down_report):
+    def remove_peer_nodes(self, nodes_down):
 
-        debug_print("Quw?")
-        coordinatorAddress = self.coordinators[getIndexFromCheck(len(self.coordinators), idInfo)]
+        try:
+            if isinstance(nodes_down, str):
+                nodes_down = json.loads(decodeBase64(nodes_down))
+
+            for node in nodes_down:
+                if node in self.peer_nodes:
+                    self.peer_nodes.remove(node)
+
+            return "Success"
+        except Exception as e:
+            return str(e)
+
+    def reportDownNodes(self, nodes_down_report):
+
+        coord_forward = str(getIndexFromCheck(len(self.coordinators), getIdRequest(str(time.time())))+1)
 
         nodes_down = encodeBase64(json.dumps(nodes_down_report))
+        self.remove_peer_nodes(nodes_down_report)
 
-        url = f'{coordinatorAddress}/fix_consistency/{nodes_down}'
+        urls = list()
+        for coordinator in self.coordinators:
+            urls.append(f"{coordinator}/down_nodes/{nodes_down}")
+
+        response = asyncio.new_event_loop().run_until_complete(
+            send_requests(urls, "POST", {"Forwarding-coordinator": coord_forward}))
+        return response
+
+    def sendFixConsistencyMsg(self, idInfo):
+        coordinatorAddress = self.coordinators[getIndexFromCheck(len(self.coordinators), idInfo)]
+
+        url = f'{coordinatorAddress}/fix_consistency'
         content = process_reply(requests.post(url))
         return content
+
+    def getHash(self):
+        d = self.database.command("dbHash")
+        last_update = list(self.collection.collection.find().sort("timestamp", -1))[0]
+        timestamp = last_update.get('timestamp')
+
+        return response(200, {'hash': d["md5"], 'timestamp': timestamp})
 
 
 responses = defaultdict(lambda: {})
@@ -99,15 +132,19 @@ def process_after_request(returned_response, serviceNode):
             unique_responses = set(responses.pop(id_request)["results"])
             if len(unique_responses) > 1:
 
+                nodes_down_report = []
                 for response_node in unique_responses:
-
-                    nodes_down_report = []
 
                     if "host" in response_node and "port" in response_node:
                         response_node = json.loads(response_node)
                         node_down = f'http://{response_node["host"]}:{response_node["port"]}'
                         nodes_down_report.append(node_down)
-                serviceNode.sendFixConsistencyMsg(id_request, nodes_down_report)
+                if len(nodes_down_report) > 0:
+                    # If we only have nodes that are down, we do not need to check the consistency
+                    serviceNode.reportDownNodes(nodes_down_report)
+
+                if (len(nodes_down_report)-len(unique_responses)) == 1:
+                    serviceNode.sendFixConsistencyMsg(id_request)
                 # Here we announce an inconsistency to the coordinator
                 pass
 
