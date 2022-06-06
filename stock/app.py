@@ -24,8 +24,8 @@ def get_item(item_id):
     return serviceNode.collection.find_one({"_id": item_id})
 
 
-@app.post('/item/create/<int:price>')
-def create_item(price: int):
+@app.post('/item/create/<float:price>')
+def create_item(price: float):
     item_id = request.headers["Id-object"]
     serviceNode.collection.insert_one({"_id": item_id, "price": price, "stock": 0})
 
@@ -95,7 +95,7 @@ def remove_multiple_stock(items_json: str):
         if result.status_code != 200:
             for deleted_item in deleted_items:
                 add_stock(deleted_item, amount)
-            return response(400, {'status_code': 400, 'message': "No stock"}, request.headers['Id-request'])
+            return response(result.status_code, {'status_code': result.status_code, 'message': result.message}, request.headers['Id-request'])
         else:
             deleted_items.append(item)
 

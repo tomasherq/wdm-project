@@ -86,34 +86,52 @@ def fix_consistency(nodes_down: str):
     # get all hashes of databases with the corresponding node directions
     node_dir, responses = get_hash(nodesUp)
 
-    # remove this
-    #responses = ['d41d8cd98f00b204e9800998ecf8427e', 'd41d8cd98f00b204e9800998ecf8427r', 'd41d8cd98f00b204e9800998ecf8427r']
+    hashes = list()
+    for item in responses:
+        hashes.append(item["hash"])
 
     # find the most common hash
-    counter_responses = Counter(responses)
-    common_hash = max(responses, key=responses.count)
+    counter_responses = Counter(hashes)
+    common_hash = max(hashes, key=hashes.count)
     times_common_hash = counter_responses[common_hash]
+
+    # find the consistent and inconsistent nodes
+    consistent_nodes = []
+    inconsistent_nodes = []
 
     # check if more than one databases have the same common hash
     count = 0
     for ele in counter_responses:
         if counter_responses[ele] == times_common_hash:
             count = count+1
-    count = 10  # remove this
     if count <= 1:
-        debug_print("We found the most common hash. This is the variable common_hash")
-        # find the consistent and inconsistent nodes
-        consistent_nodes = []
-        inconsistent_nodes = []
+        # We found the most common hash. This is the variable common_hash"
         for n in range(len(node_dir)):
-            if responses[n] == common_hash:
+            if hashes[n] == common_hash:
                 consistent_nodes.append(node_dir[n])
             else:
                 inconsistent_nodes.append(node_dir[n])
-        debug_print(consistent_nodes)
-        debug_print(inconsistent_nodes)
+
     else:
+
         debug_print("Need to check time of last update")
+
+        # Need to check time of last update
+
+        timestamps = list()
+        for item in responses:
+            timestamps.append(item["timestamp"])
+
+        last_timestamp = max(timestamps)
+        pos_last_timestamp = timestamps.index(last_timestamp)
+        node_last_updated = node_dir[pos_last_timestamp]
+
+        consistent_nodes.append(node_last_updated)
+        inconsistent_nodes = node_dir
+        inconsistent_nodes.remove(node_last_updated)
+
+    debug_print(consistent_nodes)
+    debug_print(inconsistent_nodes)
 
     return response(200, "Consistency is fixed now")
 

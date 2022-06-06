@@ -10,9 +10,7 @@ def get_hash(nodesDirections):
     url = ''
     for nodeDir in nodesDirections:
         url = f'{nodeDir}/getHash'
-        reply = process_reply(requests.get(url))
-        debug_print(reply)
-        hash = reply.pop('message')
+        hash = process_reply(requests.get(url))
         responses.append(hash)
         node_dirs.append(nodeDir)
 

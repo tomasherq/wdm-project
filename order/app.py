@@ -22,7 +22,10 @@ def preprocess():
 @app.get('/getHash')
 def getHash():
     d = serviceNode.database.command("dbHash")
-    return response(200, d["md5"])
+    last_update = list(serviceNode.collection.collection.find().sort("timestamp", -1))[0]
+    timestamp = last_update.get('timestamp')
+
+    return response(200, {'hash': d["md5"], 'timestamp': timestamp})
 
 
 def get_order(order_id):
@@ -68,12 +71,12 @@ def add_item(order_id, item_id):
     item_info = serviceNode.sendMessageCoordinator(url, "stock", "GET")
 
     if item_info['stock'] == 0:
-        return response(400, {'status_code': 400, 'message': "No stock"}, request.headers['Id-request'])
+        return response(400, {'status_code': 400, 'message': "No stock for this item"}, request.headers['Id-request'])
 
     items = order["items"]
     items.append(item_id)
 
-    newvalues = {"$set": {"items": items, "total_cost": order["total_cost"] + int(item_info['price'])}}
+    newvalues = {"$set": {"items": items, "total_cost": order["total_cost"] + float(item_info['price'])}}
     serviceNode.collection.update_one({"_id": order_id}, newvalues)
 
     return response(200, {'status_code': 200}, request.headers['Id-request'])
@@ -99,7 +102,6 @@ def remove_item(order_id, item_id):
 @ app.get('/find/<order_id>')
 def find_order(order_id: str):
     result = get_order(order_id)
-    debug_print(result)
     if result == None:
         return response(404, {'status_code': 404, 'message': "Order not found"}, request.headers['Id-request'])
 
@@ -115,9 +117,8 @@ def checkout(order_id):
         app.logger.error(f"Order with orderid: {order_id} is already paid.")
 
         return response(402, {'status_code': 402, 'message': "Order already paid"}, request.headers['Id-request'])
-
     # This is to have the order done!
-    url = f'/pay/{result["user"]}/{order_id}/{result["total_cost"]}'
+    url = f'/pay/{result["user"]}/{order_id}/{float(result["total_cost"])}'
 
     pay_info = serviceNode.sendMessageCoordinator(url, "payment", "POST")
     pay_status = pay_info["status_code"]
@@ -135,7 +136,7 @@ def checkout(order_id):
 
     if stock_status != 200:
         # Reimburse payment
-        url = f'/add_funds/{result["user"]}/{result["total_cost"]}'
+        url = f'/add_funds/{result["user"]}/{float(result["total_cost"])}'
         pay_info = serviceNode.sendMessageCoordinator(url, "payment", "POST")
         return response(501, {'status_code': 501, 'message': "Not enough stock for the request"}, request.headers['Id-request'])
 

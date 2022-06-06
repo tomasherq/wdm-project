@@ -7,15 +7,15 @@ class TestMicroservices(unittest.TestCase):
 
     def test_stock(self):
         # Test /stock/item/create/<price>
-        item: dict = tu.create_item(5)
+        item: dict = tu.create_item(5.0)
         self.assertTrue('item_id' in item)
 
         item_id: str = item['item_id']
 
         # Test /stock/find/<item_id>
         item: dict = tu.find_item(item_id)
-        self.assertEqual(item['price'], 5)
-        self.assertEqual(item['stock'], 0)
+        self.assertEqual(item['price'], 5.0)
+        self.assertEqual(item['stock'], 0.0)
 
         # Test /stock/add/<item_id>/<number>
         add_stock_response = tu.add_stock(item_id, 50)
@@ -42,11 +42,11 @@ class TestMicroservices(unittest.TestCase):
         user_id: str = user['user_id']
 
         # Test /users/credit/add/<user_id>/<amount>
-        add_credit_response = tu.add_credit_to_user(user_id, 15)
+        add_credit_response = tu.add_credit_to_user(user_id, 15.0)
         self.assertTrue(tu.status_code_is_success(add_credit_response))
 
         # add item to the stock service
-        item: dict = tu.create_item(5)
+        item: dict = tu.create_item(5.0)
         self.assertTrue('item_id' in item)
 
         item_id: str = item['item_id']
@@ -68,11 +68,11 @@ class TestMicroservices(unittest.TestCase):
         add_item_response = tu.add_item_to_order(order_id, item_id)
         self.assertTrue(tu.status_code_is_success(add_item_response))
 
-        payment_response = tu.payment_pay(user_id, order_id, 10)
+        payment_response = tu.payment_pay(user_id, order_id, 10.0)
         self.assertTrue(tu.status_code_is_success(payment_response))
 
         credit_after_payment: int = tu.find_user(user_id)['credit']
-        self.assertEqual(credit_after_payment, 5)
+        self.assertEqual(credit_after_payment, 5.0)
 
     def test_order(self):
         # Test /payment/pay/<user_id>/<order_id>
@@ -88,14 +88,14 @@ class TestMicroservices(unittest.TestCase):
         order_id: str = order['order_id']
 
         # add item to the stock service
-        item1: dict = tu.create_item(5)
+        item1: dict = tu.create_item(5.0)
         self.assertTrue('item_id' in item1)
         item_id1: str = item1['item_id']
         add_stock_response = tu.add_stock(item_id1, 15)
         self.assertTrue(tu.status_code_is_success(add_stock_response))
 
         # add item to the stock service
-        item2: dict = tu.create_item(5)
+        item2: dict = tu.create_item(5.0)
         self.assertTrue('item_id' in item2)
         item_id2: str = item2['item_id']
         add_stock_response = tu.add_stock(item_id2, 1)
@@ -118,19 +118,19 @@ class TestMicroservices(unittest.TestCase):
         self.assertTrue(tu.status_code_is_success(int(add_stock_response)))
 
         credit_after_payment: int = tu.find_user(user_id)['credit']
-        self.assertEqual(credit_after_payment, 0)
+        self.assertEqual(credit_after_payment, 0.0)
 
         checkout_response = tu.checkout_order(order_id).status_code
         self.assertTrue(tu.status_code_is_failure(checkout_response))
 
-        add_credit_response = tu.add_credit_to_user(user_id, 15)
+        add_credit_response = tu.add_credit_to_user(user_id, 15.0)
         self.assertTrue(tu.status_code_is_success(int(add_credit_response)))
 
         credit: int = tu.find_user(user_id)['credit']
-        self.assertEqual(credit, 15)
+        self.assertEqual(credit, 15.0)
 
         stock: int = tu.find_item(item_id1)['stock']
-        self.assertEqual(stock, 15)
+        self.assertEqual(stock, 15.0)
 
         checkout_response = tu.checkout_order(order_id).status_code
         self.assertTrue(tu.status_code_is_success(checkout_response))
@@ -139,10 +139,10 @@ class TestMicroservices(unittest.TestCase):
         self.assertEqual(stock_after_subtract, 14)
 
         credit: int = tu.find_user(user_id)['credit']
-        self.assertEqual(credit, 5)
+        self.assertEqual(credit, 5.0)
 
         cost: int = tu.find_order(order_id)['total_cost']
-        self.assertEqual(cost, 10)
+        self.assertEqual(cost, 10.0)
 
 
 
