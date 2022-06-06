@@ -19,8 +19,24 @@ def preprocess():
 
 @app.get('/getHash')
 def getHash():
-    d = serviceNode.database.command("dbHash")
-    return response(200, d["md5"])
+    return serviceNode.getHash()
+
+
+@app.get('/alive')
+def alive():
+    return response(200, {"alive": serviceNode.full_address})
+
+
+@app.post('/remove_nodes/<nodes_down>')
+def remove_nodes_api(nodes_down: str):
+    reply = serviceNode.remove_peer_nodes(nodes_down)
+
+    return response(200, {"message": reply})
+
+
+@ app.route('/ping')
+def ping_service():
+    return "Hello there (°▽°)/"
 
 
 def helper_find_user(user_id):
@@ -79,9 +95,9 @@ def add_credit(user_id: str, amount: float):
 
 @app.post('/pay/<user_id>/<order_id>/<float:amount>')
 def remove_credit(user_id: str, order_id: str, amount: float):
-    
+
     user_object = helper_find_user(user_id)
-    
+
     if type(user_object) is Response:
         return user_object
 

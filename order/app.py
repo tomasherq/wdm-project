@@ -40,9 +40,9 @@ def remove_nodes_api(nodes_down: str):
     return response(200, {"message": reply})
 
 
-@ app.route('/')
+@ app.route('/ping')
 def ping_service():
-    return json.dumps(serviceNode.coordinators)
+    return "Hello there (°▽°)/"
 
 
 @ app.post('/create/<user_id>')
