@@ -12,7 +12,6 @@ app = Flask(f"coord-service-{serviceID}-{ID_NODE}-internal")
 DEBUG = True
 # Each one of the services will run an instance, run in a different port and have different clients
 
-# I want to have the address and port of the clients.
 
 replies = defaultdict(lambda: {})
 coordinatorService = CoordinatorService(serviceID)
@@ -51,6 +50,7 @@ def catch_all(request_info):
     if idRequest in replies:
         replies[idRequest]['counter'] += 1
 
+        # Wait for the answer before forwarding.
         while "content" not in replies[idRequest]:
             time.sleep(0.1)
 
@@ -62,10 +62,20 @@ def catch_all(request_info):
 
     replies[idRequest]['counter'] = 1
 
-    # We could make them talk directly through this port but it complicates a lot the logic
-    url = f'{coordinatorsService[getIndexFromCheck(len(coordinatorsService),idRequest)]}/{prefixUrl}{requestInfo["url"]}'
+    reply = {"status_code": 505}
 
-    replies[idRequest]['content'] = process_reply(requests.request(requestInfo["method"], url), True)
+    while is_invalid_reply(reply):
+
+        # We could make them talk directly through this port but it complicates a lot the logic
+
+        coordinator_choosen = coordinatorsService[getIndexFromCheck(len(coordinatorsService), idRequest)]
+
+        url = f'{coordinator_choosen}/{prefixUrl}{requestInfo["url"]}'
+
+        replies[idRequest]['content'] = process_reply(make_request(requestInfo["method"], url, {}))
+
+        if is_invalid_reply(reply) and coordinator_choosen in coordinatorsService:
+            coordinatorsService.remove(coordinator_choosen)
 
     return replies[idRequest]['content']
 

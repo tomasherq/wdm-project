@@ -43,15 +43,12 @@ def catch_all(path):
 
     headers = {"Id-request": idRequest}
     isReadRequest = request_is_read(request)
-    counter = 0
+
     # Problem with hash, the request goes always to the same
     reply = {"status_code": 505}
-    while isinstance(reply, dict) and "status_code" in reply and reply["status_code"] == 505:
+    while is_invalid_reply(reply):
 
         nodeDir = coordinatorService.getNodeToSend(isReadRequest, idRequest)
-
-        if counter == 0:
-            nodeDir = "http://192.168.124.120:2801"
 
         if not isReadRequest:
             headers["Redirect"] = "1"
@@ -62,10 +59,9 @@ def catch_all(path):
 
         reply = process_reply(make_request(request.method, url, headers=headers))
 
-        if isinstance(reply, dict) and "status_code" in reply and reply["status_code"] == 505:
+        if is_invalid_reply(reply):
             coordinatorService.removeNodes([nodeDir], "inter")
             coordinatorService.sendRemoveNodes(encodeBase64(json.dumps([nodeDir])))
-        counter = 1
 
     return response(reply["status_code"], reply)
 

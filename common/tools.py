@@ -219,3 +219,7 @@ def process_reply(data_reply, return_raw=False):
 
 def debug_print(var):
     return print(var, file=sys.stdout, flush=True)
+
+
+def is_invalid_reply(reply):
+    return isinstance(reply, dict) and "status_code" in reply and reply["status_code"] == 505

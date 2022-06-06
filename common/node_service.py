@@ -22,7 +22,6 @@ class NodeService():
         self.full_address = f"http://"+self.ip_address+":2801"
 
         self.peer_nodes.remove("http://"+self.ip_address+":2801")
-        self.peer_nodes.append("http://192.168.124.200:2801")
 
         self.dropCollection()
 
@@ -35,11 +34,22 @@ class NodeService():
         idInfo = getIdRequest(json.dumps(info_for_coord))
         info_for_coord["id"] = idInfo
         infoEncoded = encodeBase64(json.dumps(info_for_coord))
-        coordinatorAddress = self.coordinators[getIndexFromCheck(len(self.coordinators), idInfo)]
 
-        url = f'{coordinatorAddress}/request/{infoEncoded}'
-        content = process_reply(requests.post(url))
-        return content
+        coordinators_available = self.coordinators
+
+        # This code is everywhere and I kind of hate it
+        # maybe we should create a wrapper for python.
+        reply = {"status_code": 505}
+        while is_invalid_reply(reply):
+
+            coordinatorAddress = coordinators_available[getIndexFromCheck(len(self.coordinators), idInfo)]
+            url = f'{coordinatorAddress}/request/{infoEncoded}'
+            reply = process_reply(make_request(url, "POST", {}))
+
+            if is_invalid_reply(reply) and coordinatorAddress in coordinators_available:
+                coordinators_available.remove(coordinatorAddress)
+
+        return reply
 
     def forwardRequest(self, url, method, headers):
 
@@ -65,6 +75,8 @@ class NodeService():
 
     def reportDownNodes(self, nodes_down_report):
 
+        # We are aware that if this coordinator is down it will not be forwarded
+        # But is way to complex to install that.
         coord_forward = str(getIndexFromCheck(len(self.coordinators), getIdRequest(str(time.time())))+1)
 
         nodes_down = encodeBase64(json.dumps(nodes_down_report))
@@ -79,11 +91,18 @@ class NodeService():
         return response
 
     def sendFixConsistencyMsg(self, idInfo):
-        coordinatorAddress = self.coordinators[getIndexFromCheck(len(self.coordinators), idInfo)]
+        coordinators_available = self.coordinators
+        reply = {"status_code": 505}
+        while is_invalid_reply(reply):
 
-        url = f'{coordinatorAddress}/fix_consistency'
-        content = process_reply(requests.post(url))
-        return content
+            coordinatorAddress = coordinators_available[getIndexFromCheck(len(self.coordinators), idInfo)]
+            url = f'{coordinatorAddress}/fix_consistency'
+            reply = process_reply(make_request(url, "POST", {}))
+
+            if is_invalid_reply(reply) and coordinatorAddress in coordinators_available:
+                coordinators_available.remove(coordinatorAddress)
+
+        return reply
 
     def getHash(self):
         d = self.database.command("dbHash")
