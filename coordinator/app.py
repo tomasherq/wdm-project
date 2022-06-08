@@ -1,18 +1,24 @@
 import sys
 
-from random import randint
+from itsdangerous import base64_encode
+
 
 from common.tools import *
-from common.coordinator import *
+from common.coordinator_service import *
 
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
-nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
+
+coordinatorService = CoordinatorService(serviceID)
 
 
-# Each one of the services will run an instance, run in a different port and have different clients
+@app.before_request
+def load_up_nodes():
+    coordinatorService.loadUpNodes("general")
+    coordinatorService.checkUpNodes()
 
-# I want to have the address and port of the clients.
+    if request.remote_addr in coordinatorService.nodesDirections:
+        return response(403, "Not authorized.")
 
 
 @app.route('/ping')
@@ -20,58 +26,42 @@ def ping_service():
     return f'Hello, I am ping service!'
 
 
-service = serviceID.lower()
-if service == "order":
-    service = "orders"
-
-
-@app.before_request
-def check_address_node():
-    if request.remote_addr in nodesDirections:
-        return response(403, "Not authorized.")
-
-
 @app.get('/consistency')
 def check_consistency():
 
-    nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
+    node_dir, responses = get_hash(coordinatorService.nodesUp)
 
-    ip_addr = request.remote_addr
-
-    if ip_addr in nodesDirections:
-        return response(403, "Not authorized.")
-
-    node_dir, responses = get_hash(nodesDirections)
-    
     result = responses.count(responses[0]) == len(responses)
 
     return response(200, f"Consistency: {result}")
 
 
-@app.route(f'/{service}/<path:path>', methods=['POST', 'GET', 'DELETE'])
+@app.route(f'/{coordinatorService.service}/<path:path>', methods=['POST', 'GET', 'DELETE'])
 def catch_all(path):
 
     idRequest = getIdRequest(path)
 
     headers = {"Id-request": idRequest}
+    isReadRequest = request_is_read(request)
 
     # Problem with hash, the request goes always to the same
+    reply = {"status_code": 505}
+    while is_invalid_reply(reply):
 
-    if request_is_read(request):
+        nodeDir = coordinatorService.getNodeToSend(isReadRequest, idRequest)
 
-        indexNode = randint(0, len(nodesDirections)-1)
-    else:
-        headers["Redirect"] = "1"
-        indexNode = getIndexFromCheck(len(nodesDirections), idRequest)
+        if not isReadRequest:
+            headers["Redirect"] = "1"
+            idObject = getIdRequest(str(time.time())+"-"+nodeDir)
+            headers["Id-object"] = idObject
 
-    nodeDir = nodesDirections[indexNode]
+        url = f'{nodeDir}/{path}'
 
-    idObject = getIdRequest(str(time.time())+"-"+nodeDir)
-    headers["Id-object"] = idObject
+        reply = process_reply(make_request(request.method, url, headers=headers))
 
-    url = f'{nodeDir}/{path}'
-
-    reply = process_reply(requests.request(request.method, url, headers=headers))
+        if is_invalid_reply(reply):
+            coordinatorService.removeNodes([nodeDir], "inter")
+            coordinatorService.sendRemoveNodes(encodeBase64(json.dumps([nodeDir])))
 
     return response(reply["status_code"], reply)
 

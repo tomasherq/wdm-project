@@ -4,3 +4,4 @@ env/mongo.env
 */__pycache__
 test_async.py
 restored_files
+test.py

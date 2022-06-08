@@ -16,8 +16,24 @@ def preprocess():
 
 @app.get('/getHash')
 def getHash():
-    d = serviceNode.database.command("dbHash")
-    return response(200, d["md5"])
+    return serviceNode.getHash()
+
+
+@app.get('/alive')
+def alive():
+    return response(200, {"alive": serviceNode.full_address})
+
+
+@app.post('/remove_nodes/<nodes_down>')
+def remove_nodes_api(nodes_down: str):
+    reply = serviceNode.remove_peer_nodes(nodes_down)
+
+    return response(200, {"message": reply})
+
+
+@ app.route('/ping')
+def ping_service():
+    return "Hello there (°▽°)/"
 
 
 def get_item(item_id):

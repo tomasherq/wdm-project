@@ -1,10 +1,10 @@
 from common.tools import *
-from common.coordinator import *
+from common.coordinator_service import *
 
-from collections import defaultdict, Counter 
+from collections import defaultdict, Counter
 import time
 
-DEBUG=True
+DEBUG = True
 
 
 serviceID = sys.argv[2]
@@ -12,17 +12,16 @@ app = Flask(f"coord-service-{serviceID}-{ID_NODE}-internal")
 DEBUG = True
 # Each one of the services will run an instance, run in a different port and have different clients
 
-# I want to have the address and port of the clients.
 
 replies = defaultdict(lambda: {})
-nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
+coordinatorService = CoordinatorService(serviceID)
 
 
 @app.before_request
 def check_address_node():
-
+    coordinatorService.loadUpNodes("inter")
     dir_node = "http://"+request.remote_addr+":2801"
-    if dir_node not in nodesDirections and not DEBUG:
+    if dir_node not in coordinatorService.nodesUp and not DEBUG:
 
         return response(403, "Not authorized.")
 
@@ -47,48 +46,68 @@ def catch_all(request_info):
     if prefixUrl == "order":
         prefixUrl = "orders"
 
-    # This will forward the same answer to all servers
+    # This will forward the same answer to all nodes
     if idRequest in replies:
         replies[idRequest]['counter'] += 1
 
+        # Wait for the answer before forwarding.
         while "content" not in replies[idRequest]:
             time.sleep(0.1)
 
         content = replies[idRequest]['content']
-        if replies[idRequest]["counter"] == len(nodesDirections):
+        if replies[idRequest]["counter"] == len(coordinatorService.nodesUp):
             replies.pop(idRequest, None)
 
         return content
 
     replies[idRequest]['counter'] = 1
 
-    # We could make them talk directly through this port but it complicates a lot the logic
-    url = f'{coordinatorsService[getIndexFromCheck(len(coordinatorsService),idRequest)]}/{prefixUrl}{requestInfo["url"]}'
+    reply = {"status_code": 505}
 
-    replies[idRequest]['content'] = process_reply(requests.request(requestInfo["method"], url), True)
+    while is_invalid_reply(reply):
+
+        # We could make them talk directly through this port but it complicates a lot the logic
+
+        coordinator_choosen = coordinatorsService[getIndexFromCheck(len(coordinatorsService), idRequest)]
+
+        url = f'{coordinator_choosen}/{prefixUrl}{requestInfo["url"]}'
+
+        replies[idRequest]['content'] = process_reply(make_request(requestInfo["method"], url, {}))
+
+        if is_invalid_reply(reply) and coordinator_choosen in coordinatorsService:
+            coordinatorsService.remove(coordinator_choosen)
 
     return replies[idRequest]['content']
+
+
+@app.post('/down_nodes/<nodes_down_raw>')
+def report_down_nodes(nodes_down_raw: str):
+    nodes_down = json.loads(decodeBase64(nodes_down_raw))
+
+    # This one has to report to the other one, we can do this with a file actually
+
+    if len(nodes_down) > 0:
+        coordinatorService.removeNodes(nodes_down)
+
+        if int(request.headers["Forwarding-coordinator"]) == ID_NODE:
+
+            coordinatorService.sendRemoveNodes(nodes_down_raw)
+    return response(200, {"msg": "Nodes fixed"})
 
 
 @app.post('/fix_consistency')
 def fix_consistency():
 
-    nodesDirections = getAddresses(f"{serviceID}_NODES_ADDRESS")
+    # Get all hashes of databases with the corresponding node directions
+    node_dir, responses = get_hash(coordinatorService.nodesUp)
 
-    ip_addr = request.remote_addr
-    if ip_addr in nodesDirections:
-        return response(403, "Not authorized.")
-    
-    # get all hashes of databases with the corresponding node directions
-    node_dir, responses = get_hash(nodesDirections)
-    
     hashes = list()
     for item in responses:
         hashes.append(item["hash"])
 
     # find the most common hash
     counter_responses = Counter(hashes)
-    common_hash = max(hashes,key=hashes.count)
+    common_hash = max(hashes, key=hashes.count)
     times_common_hash = counter_responses[common_hash]
 
     # find the consistent and inconsistent nodes
@@ -99,7 +118,7 @@ def fix_consistency():
     count = 0
     for ele in counter_responses:
         if counter_responses[ele] == times_common_hash:
-            count=count+1
+            count = count+1
     if count <= 1:
         # We found the most common hash. This is the variable common_hash"
         for n in range(len(node_dir)):
@@ -107,8 +126,11 @@ def fix_consistency():
                 consistent_nodes.append(node_dir[n])
             else:
                 inconsistent_nodes.append(node_dir[n])
-        
+
     else:
+
+        debug_print("Need to check time of last update")
+
         # Need to check time of last update
 
         timestamps = list()
@@ -118,15 +140,12 @@ def fix_consistency():
         last_timestamp = max(timestamps)
         pos_last_timestamp = timestamps.index(last_timestamp)
         node_last_updated = node_dir[pos_last_timestamp]
-        
+
         consistent_nodes.append(node_last_updated)
-        inconsistent_nodes = node_dir 
+        inconsistent_nodes = node_dir
         inconsistent_nodes.remove(node_last_updated)
-    
-    debug_print(consistent_nodes)
-    debug_print(inconsistent_nodes)
-    
-    return response(200, "Consistency is fixed now")
+
+    return response(200, {"msg": "Consistency is fixed now"})
 
 
 app.run(host=getIPAddress(f"{serviceID}_COORD_ADDRESS"), port=2802)
