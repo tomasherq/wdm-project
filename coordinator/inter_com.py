@@ -33,9 +33,8 @@ def catch_all(request_info):
     try:
         requestInfo = json.loads(decodeBase64(request_info))
     except:
-        print("JSON decoding error", file=sys.stdout, flush=True)
+        debug_print("JSON decoding error")
         return response(500, "Invalid format")
-
     serviceToCall = requestInfo["service"].upper()
     idRequest = requestInfo["id"]
 
@@ -49,7 +48,6 @@ def catch_all(request_info):
     # This will forward the same answer to all nodes
     if idRequest in replies:
         replies[idRequest]['counter'] += 1
-
         # Wait for the answer before forwarding.
         while "content" not in replies[idRequest]:
             time.sleep(0.1)
@@ -63,8 +61,7 @@ def catch_all(request_info):
     replies[idRequest]['counter'] = 1
 
     reply = {"status_code": 505}
-
-    while is_invalid_reply(reply):
+    while is_invalid_reply(reply) and len(coordinatorsService) > 0:
 
         # We could make them talk directly through this port but it complicates a lot the logic
 
@@ -72,10 +69,12 @@ def catch_all(request_info):
 
         url = f'{coordinator_choosen}/{prefixUrl}{requestInfo["url"]}'
 
-        replies[idRequest]['content'] = process_reply(make_request(requestInfo["method"], url, {}))
-
+        reply = process_reply(make_request(requestInfo["method"], url, {}))
         if is_invalid_reply(reply) and coordinator_choosen in coordinatorsService:
             coordinatorsService.remove(coordinator_choosen)
+        else:
+            break
+    replies[idRequest]['content'] = reply
 
     return replies[idRequest]['content']
 
@@ -128,9 +127,6 @@ def fix_consistency():
                 inconsistent_nodes.append(node_dir[n])
 
     else:
-
-        debug_print("Need to check time of last update")
-
         # Need to check time of last update
 
         timestamps = list()

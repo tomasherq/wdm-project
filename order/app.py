@@ -45,9 +45,11 @@ def ping_service():
     return "Hello there (°▽°)/"
 
 
+# Check the user id
 @ app.post('/create/<user_id>')
 def create_order(user_id):
     order_id = request.headers["Id-object"]
+    order_id = str(4)
 
     serviceNode.collection.insert_one({"_id": order_id,  "paid": False,
                                        "items": [], "user": user_id, "total_cost": 0})
@@ -70,6 +72,7 @@ def remove_order(order_id):
 def add_item(order_id, item_id):
 
     order = get_order(order_id)
+
     if order == None:
         return response(404, {'status_code': 404, 'message': "Order not found"}, request.headers['Id-request'])
 
