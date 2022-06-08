@@ -1,6 +1,7 @@
 from common.tools import *
 from random import randint
 from common.async_calls import send_requests, asyncio
+import random
 
 
 class CoordinatorService():
@@ -94,26 +95,16 @@ def get_hash(nodesDirections):
 
     return node_dirs, responses
 
-def dump_db(nodesDirections):
-    responses = []
-    node_dirs = []
-    url = ''
-    for nodeDir in nodesDirections:
-        url = f'{nodeDir}/getHash'
-        hash = process_reply(requests.get(url))
-        responses.append(hash)
-        node_dirs.append(nodeDir)
-    
-    return node_dirs, responses  
 
-def restore_db(nodesDirections):
-    responses = []
-    node_dirs = []
+def dump_db(nodesDirections, id):
+    # from the consistent dbs select a random one to dump the db to a file
+    nodeDir = random.choice(nodesDirections)
+    url = f'{nodeDir}/dumpDB/{id}'
+    process_reply(requests.get(url))       
+     
+
+def restore_db(nodesDirections, id):
     url = ''
     for nodeDir in nodesDirections:
-        url = f'{nodeDir}/getHash'
-        hash = process_reply(requests.get(url))
-        responses.append(hash)
-        node_dirs.append(nodeDir)
-    
-    return node_dirs, responses 
+        url = f'{nodeDir}/restoreDB/{id}'
+        process_reply(requests.get(url))

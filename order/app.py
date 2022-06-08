@@ -33,6 +33,16 @@ def alive():
     return response(200, {"alive": serviceNode.full_address})
 
 
+@app.get('/dumpDB/<id>')
+def dumpDB(id: str):
+    return serviceNode.dumpDB(id)
+
+
+@app.get('/restoreDB/<id>')
+def restoreDB(id: str):
+    return serviceNode.restoreDB(id)
+
+
 @app.post('/remove_nodes/<nodes_down>')
 def remove_nodes_api(nodes_down: str):
     reply = serviceNode.remove_peer_nodes(nodes_down)

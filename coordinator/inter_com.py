@@ -141,11 +141,13 @@ def fix_consistency():
         inconsistent_nodes = node_dir
         inconsistent_nodes.remove(node_last_updated)
 
-        debug_print(consistent_nodes)
-        debug_print(inconsistent_nodes)
-
-        dump_db(consistent_nodes)
-        restore_db(inconsistent_nodes)
+    # create an id for the restoring process using the current timestamp
+    timestamp = str(time.time())
+    restoring_id = getIdRequest(timestamp)
+    # one of the consistent nodes will have to dump the db
+    # the inconsistent ones will use it to restore
+    dump_db(consistent_nodes, restoring_id)
+    restore_db(inconsistent_nodes, restoring_id)
 
     return response(200, {"msg": "Consistency is fixed now"})
 

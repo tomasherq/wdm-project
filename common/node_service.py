@@ -112,6 +112,15 @@ class NodeService():
 
         return response(200, {'hash': d["md5"], 'timestamp': timestamp})
 
+    def dumpDB(self, id):
+        service = self.service.lower()
+        command = f'sh common/db_restore/dump_db.sh {service} {id}'
+        os.system(command)
+    
+    def restoreDB(self, id):
+        service = self.service.lower()
+        command = f'sh common/db_restore/restore_db.sh {service} {id}'
+        os.system(command)
 
 responses = defaultdict(lambda: {})
 
