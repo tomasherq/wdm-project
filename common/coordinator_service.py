@@ -93,3 +93,27 @@ def get_hash(nodesDirections):
         node_dirs.append(nodeDir)
 
     return node_dirs, responses
+
+def dump_db(nodesDirections):
+    responses = []
+    node_dirs = []
+    url = ''
+    for nodeDir in nodesDirections:
+        url = f'{nodeDir}/getHash'
+        hash = process_reply(requests.get(url))
+        responses.append(hash)
+        node_dirs.append(nodeDir)
+    
+    return node_dirs, responses  
+
+def restore_db(nodesDirections):
+    responses = []
+    node_dirs = []
+    url = ''
+    for nodeDir in nodesDirections:
+        url = f'{nodeDir}/getHash'
+        hash = process_reply(requests.get(url))
+        responses.append(hash)
+        node_dirs.append(nodeDir)
+    
+    return node_dirs, responses 

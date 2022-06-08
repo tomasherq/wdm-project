@@ -141,6 +141,12 @@ def fix_consistency():
         inconsistent_nodes = node_dir
         inconsistent_nodes.remove(node_last_updated)
 
+        debug_print(consistent_nodes)
+        debug_print(inconsistent_nodes)
+
+        dump_db(consistent_nodes)
+        restore_db(inconsistent_nodes)
+
     return response(200, {"msg": "Consistency is fixed now"})
 
 
