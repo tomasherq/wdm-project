@@ -43,6 +43,7 @@ def get_item(item_id):
 @app.post('/item/create/<float:price>')
 def create_item(price: float):
     item_id = request.headers["Id-object"]
+    item_id = str(4)
     serviceNode.collection.insert_one({"_id": item_id, "price": price, "stock": 0})
 
     return response(200, {"status_code": 200, "item_id": item_id}, request.headers['Id-request'])

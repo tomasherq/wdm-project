@@ -1,5 +1,7 @@
 #!/bin/bash
-# $2 is the service of the directory and $3 is the id is given by the server
+# $1 is the service of the directory and $2 is the id is given by the server
+
+
 
 mkdir -p /app/$1/common/db_restore/restored_files/$1/
 

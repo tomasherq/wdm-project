@@ -217,8 +217,9 @@ def process_reply(data_reply, return_raw=False):
         return {"status_code": 501, "message": "Invalid URL."}
 
 
-def debug_print(var):
-    return print(var, file=sys.stdout, flush=True)
+def debug_print(*vars):
+
+    print(vars, file=sys.stdout, flush=True)
 
 
 def is_invalid_reply(reply):

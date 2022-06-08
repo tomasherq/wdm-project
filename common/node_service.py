@@ -44,7 +44,8 @@ class NodeService():
 
             coordinatorAddress = coordinators_available[getIndexFromCheck(len(self.coordinators), idInfo)]
             url = f'{coordinatorAddress}/request/{infoEncoded}'
-            reply = process_reply(make_request(url, "POST", {}))
+
+            reply = process_reply(make_request("POST", url, {}))
 
             if is_invalid_reply(reply) and coordinatorAddress in coordinators_available:
                 coordinators_available.remove(coordinatorAddress)
@@ -97,7 +98,7 @@ class NodeService():
 
             coordinatorAddress = coordinators_available[getIndexFromCheck(len(self.coordinators), idInfo)]
             url = f'{coordinatorAddress}/fix_consistency'
-            reply = process_reply(make_request(url, "POST", {}))
+            reply = process_reply(make_request("POST", url, {}))
 
             if is_invalid_reply(reply) and coordinatorAddress in coordinators_available:
                 coordinators_available.remove(coordinatorAddress)
@@ -121,7 +122,7 @@ def process_before_request(request, serviceNode):
         id_request = request.headers["Id-request"]
 
         if id_request in responses and responses[id_request]["forward"] is True:
-            return response(200, {'status_code': 200, 'message': "The request was already made."})
+            return response(405, {'status_code': 405, 'message': "The request was already made."})
 
         responses[id_request]["forward"] = "Redirect" in request.headers
         if responses[id_request]["forward"] is True:
