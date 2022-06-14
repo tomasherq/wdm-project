@@ -19,6 +19,16 @@ def getHash():
     return serviceNode.getHash()
 
 
+@app.get('/dumpDB/<id>')
+def dumpDB(id: str):
+    return serviceNode.dumpDB(id)
+
+
+@app.get('/restoreDB/<id>')
+def restoreDB(id: str):
+    return serviceNode.restoreDB(id)
+
+
 @app.get('/alive')
 def alive():
     return response(200, {"alive": serviceNode.full_address})

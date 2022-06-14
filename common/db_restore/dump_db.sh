@@ -9,7 +9,7 @@ SEND_LOCATION="/tmp/$1_$2.bson"
 
 mkdir -p /app/$1/common/db_restore/restored_files/$1/
 
-rm -r /app/$1/common/db_restore/restored_files/$1/*
+rm -r -f /app/$1/common/db_restore/restored_files/$1/*
 
 mongodump -o $DIRECTORY_DUMP
 
