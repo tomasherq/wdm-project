@@ -52,8 +52,10 @@ def catch_all(path):
 
         if not isReadRequest:
             headers["Redirect"] = "1"
-            idObject = getIdRequest(str(time.time())+"-"+nodeDir)
+            timestamp = str(time.time())
+            idObject = getIdRequest(timestamp+"-"+nodeDir)
             headers["Id-object"] = idObject
+            headers["Timestamp"] = timestamp
 
         url = f'{nodeDir}/{path}'
 

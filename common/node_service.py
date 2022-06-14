@@ -122,12 +122,13 @@ def process_before_request(request, serviceNode):
         id_request = request.headers["Id-request"]
 
         if id_request in responses and responses[id_request]["forward"] is True:
-            return response(405, {'status_code': 405, 'message': "The request was already made."})
+            return response(208, {'status_code': 208, 'message': "The request was already made."})
 
         responses[id_request]["forward"] = "Redirect" in request.headers
         if responses[id_request]["forward"] is True:
 
-            headers = {"Id-object": request.headers["Id-object"], "Id-request": id_request}
+            headers = {"Id-object": request.headers["Id-object"],
+                       "Id-request": id_request, "Timestamp": request.headers["Timestamp"]}
 
             results = {}
             try:
@@ -141,11 +142,14 @@ def process_before_request(request, serviceNode):
 def process_after_request(returned_response, serviceNode):
 
     # This is to start the recovery
+
     if (serviceNode.isInRecover or serviceNode.collection.is_queue_empty()) is False:
+
         serviceNode.collection.process_queue()
 
     if "Id-request" in returned_response.headers:
         id_request = returned_response.headers["Id-request"]
+
         if responses[id_request]["forward"] is True:
             responses[id_request]["results"].append(returned_response.get_data().decode())
 

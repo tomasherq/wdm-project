@@ -64,7 +64,9 @@ def helper_find_order(order_id):
 @app.post('/create_user')
 def create_user():
     user_id = request.headers["Id-object"]
-    serviceNode.collection.insert_one({"_id": user_id, "credit": 0.0})
+    timestamp = request.headers["Timestamp"]
+
+    serviceNode.collection.insert_one({"_id": user_id, "credit": 0.0, "timestamp": timestamp})
     return response(200, {"status_code": 200, "user_id": user_id}, request.headers['Id-request'])
 
 
@@ -72,14 +74,13 @@ def create_user():
 def find_user(user_id: str):
     result = serviceNode.collection.find_one({"_id": user_id})
     if result == None:
-        return response(404, {'status_code': 404, 'message': "Item not found"}, request.headers['Id-request'])
+        return response(404, {'status_code': 404, 'message': "User not found"}, request.headers['Id-request'])
     return response(200, {"status_code": 200, "user_id": user_id, "credit": result["credit"]}, request.headers['Id-request'])
 
 
 @app.post('/add_funds/<user_id>/<float:amount>')
 def add_credit(user_id: str, amount: float):
     user_object = helper_find_user(user_id)
-    debug_print(user_object)
     if type(user_object) is Response:
         return user_object
 

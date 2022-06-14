@@ -2,14 +2,14 @@
 
 
 
+FILE_LOCATION="/app/$1/common/db_restore/restored_files/$1s/$1.bson"
 
-path_dir="/app/common/restored_files/$1/$2"
 
 while :
 do
-    if [ -d $path_dir ] 
+    if [ -d $FILE_LOCATION ] 
     then
-        mongorestore $path_dir
+        mongorestore $FILE_LOCATION
         break
     else
         sleep 2
