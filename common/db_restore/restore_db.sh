@@ -2,7 +2,7 @@
 
 
 
-FILE_LOCATION="/app/$1/common/db_restore/restored_files/$1s/$1.bson"
+FILE_LOCATION="/tmp/$1_$2.bson"
 
 
 while :
@@ -15,3 +15,5 @@ do
         sleep 2
     fi
 done
+
+rm $FILE_LOCATION
