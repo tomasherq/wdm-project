@@ -5,11 +5,10 @@ DIRECTORY_DUMP="/app/$1/common/db_restore/restored_files/$1/$2"
 
 LOCATION_FILE="$DIRECTORY_DUMP/$1s/$1.bson"
 
-echo $LOCATION_FILE
 
 mkdir -p /app/$1/common/db_restore/restored_files/$1/
 
-rm -r /app/$1/common/db_restore/restored_files/$1/*
+rm -r -f /app/$1/common/db_restore/restored_files/$1/*
 
 mongodump -o $DIRECTORY_DUMP
 
