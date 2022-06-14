@@ -30,7 +30,7 @@ def getHash():
 
 @app.get('/alive')
 def alive():
-    return response(200, {"alive": serviceNode.full_address})
+    return serviceNode.aliveResponse()
 
 
 @app.get('/dumpDB/<id>')
