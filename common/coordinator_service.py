@@ -96,10 +96,13 @@ def get_hash(nodesDirections):
     return node_dirs, responses
 
 
-def dump_db(nodesDirections, id):
+def dump_db(coNodesDirections, incoNodesDirections, id):
+    # prepare the list of inconsistent nodes
+    inconsistent_list = [s.replace("http://", "") for s in incoNodesDirections]
+    inconsistent_nodes = ';'.join(inconsistent_list)
     # from the consistent dbs select a random one to dump the db to a file
-    nodeDir = random.choice(nodesDirections)
-    url = f'{nodeDir}/dumpDB/{id}'
+    nodeDir = random.choice(coNodesDirections)
+    url = f'{nodeDir}/dumpDB/{id}/{inconsistent_nodes}'
     process_reply(requests.get(url))       
      
 
