@@ -112,9 +112,9 @@ class NodeService():
 
         return response(200, {'hash': d["md5"], 'timestamp': timestamp})
 
-    def dumpDB(self, id):
+    def dumpDB(self, id, inconsistent_nodes):
         service = self.service.lower()
-        command = f'./common/db_restore/dump_db.sh {service} {id}'
+        command = f'./common/db_restore/dump_db.sh {service} {id} "{inconsistent_nodes}"'
         os.system(command)
 
     def restoreDB(self, id):

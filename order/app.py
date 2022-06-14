@@ -33,9 +33,9 @@ def alive():
     return serviceNode.aliveResponse()
 
 
-@app.get('/dumpDB/<id>')
-def dumpDB(id: str):
-    return serviceNode.dumpDB(id)
+@app.get('/dumpDB/<id>/<inconsistent_nodes>')
+def dumpDB(id: str, inconsistent_nodes: str):
+    return serviceNode.dumpDB(id, inconsistent_nodes)
 
 
 @app.get('/restoreDB/<id>')
