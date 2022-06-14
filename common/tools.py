@@ -85,7 +85,7 @@ class CollectionWrapperMongo():
 
     def insert_one(self, insert_object):
 
-        insert_object["timestamp"] = time.time()
+        insert_object["timestamp"] = float(insert_object["timestamp"])
         request_object = {"request_type": "insert", "object": insert_object}
         if self.recovery_mode:
             self.enqueue(request_object)

@@ -58,10 +58,18 @@ def ping_service():
 # Check the user id
 @ app.post('/create/<user_id>')
 def create_order(user_id):
-    order_id = request.headers["Id-object"]
 
+    url = f"/find_user/{user_id}"
+
+    user_info = serviceNode.sendMessageCoordinator(url, "payment", "GET")
+
+    if user_info['status_code'] == 404:
+        return response(404, user_info, request.headers['Id-request'])
+
+    order_id = request.headers["Id-object"]
+    timestamp = request.headers["Timestamp"]
     serviceNode.collection.insert_one({"_id": order_id,  "paid": False,
-                                       "items": [], "user": user_id, "total_cost": 0})
+                                       "items": [], "user": user_id, "total_cost": 0, "timestamp": timestamp})
 
     return response(200, {'status_code': 200, 'order_id': order_id}, request.headers['Id-request'])
 
