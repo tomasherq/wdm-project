@@ -31,7 +31,7 @@ def restoreDB(id: str):
 
 @app.get('/alive')
 def alive():
-    return response(200, {"alive": serviceNode.full_address})
+    return serviceNode.aliveResponse()
 
 
 @app.post('/remove_nodes/<nodes_down>')

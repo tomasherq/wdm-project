@@ -114,13 +114,17 @@ class NodeService():
 
     def dumpDB(self, id, inconsistent_nodes):
         service = self.service.lower()
-        command = f'sh common/db_restore/dump_db.sh {service} {id} {inconsistent_nodes}'
+        command = f'./common/db_restore/dump_db.sh {service} {id} "{inconsistent_nodes}"'
         os.system(command)
-    
+
     def restoreDB(self, id):
         service = self.service.lower()
-        command = f'sh common/db_restore/restore_db.sh {service} {id}'
+        command = f'./common/db_restore/restore_db.sh {service} {id}'
         os.system(command)
+
+    def aliveResponse(self):
+        return response(200, {"alive": self.full_address, "status_code": 200})
+
 
 responses = defaultdict(lambda: {})
 

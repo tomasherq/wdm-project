@@ -100,14 +100,14 @@ services:
         networks:
             shared_net:
                 ipv4_address: 192.168.124.50
-    coordinator-order-1:
-        container_name: coordinator-order-1
-        hostname: coordinator-order-1
+    order-coord-1:
+        container_name: order-coord-1
+        hostname: order-coord-1
         working_dir: /app
         build:
             context: .
             dockerfile: coordinator.Dockerfile
-        image: coordinator-order-1
+        image: order-coord-1
         env_file:
         - env/addresses.env
         volumes:
@@ -120,14 +120,34 @@ services:
         networks:
             shared_net:
                 ipv4_address: 192.168.124.21
-    coordinator-payment-1:
-        container_name: coordinator-payment-1
-        hostname: coordinator-payment-1
+    order-coord-2:
+        container_name: order-coord-2
+        hostname: order-coord-2
         working_dir: /app
         build:
             context: .
             dockerfile: coordinator.Dockerfile
-        image: coordinator-payment-1
+        image: order-coord-2
+        env_file:
+        - env/addresses.env
+        volumes:
+        - ./coordinator:/app/coordinator
+        - ./common:/app/coordinator/common
+        command: bash -c "cd coordinator/common/ && bash execution.sh 2 ORDER"
+        ports:
+        - 1108:2801
+        - 8081:2802
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.22
+    payment-coord-1:
+        container_name: payment-coord-1
+        hostname: payment-coord-1
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: coordinator.Dockerfile
+        image: payment-coord-1
         env_file:
         - env/addresses.env
         volumes:
@@ -135,19 +155,19 @@ services:
         - ./common:/app/coordinator/common
         command: bash -c "cd coordinator/common/ && bash execution.sh 1 PAYMENT"
         ports:
-        - 1108:2801
-        - 8081:2802
+        - 1109:2801
+        - 8082:2802
         networks:
             shared_net:
                 ipv4_address: 192.168.124.41
-    coordinator-stock-1:
-        container_name: coordinator-stock-1
-        hostname: coordinator-stock-1
+    stock-coord-1:
+        container_name: stock-coord-1
+        hostname: stock-coord-1
         working_dir: /app
         build:
             context: .
             dockerfile: coordinator.Dockerfile
-        image: coordinator-stock-1
+        image: stock-coord-1
         env_file:
         - env/addresses.env
         volumes:
@@ -155,11 +175,23 @@ services:
         - ./common:/app/coordinator/common
         command: bash -c "cd coordinator/common/ && bash execution.sh 1 STOCK"
         ports:
-        - 1109:2801
-        - 8082:2802
+        - 1110:2801
+        - 8083:2802
         networks:
             shared_net:
                 ipv4_address: 192.168.124.61
+    balancer:
+        build: ./balancer
+        ports:
+        - 1101:80
+        depends_on:
+        - order-coord-1
+        - order-coord-2
+        - payment-coord-1
+        - stock-coord-1
+        networks:
+            shared_net:
+                ipv4_address: 192.168.124.200
 networks:
     shared_net:
         driver: bridge

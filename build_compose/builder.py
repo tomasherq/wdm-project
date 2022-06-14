@@ -11,6 +11,16 @@ def increaseHostPort(index):
     hostPorts[index] += 1
 
 
+def add_balancer(coordinator_names, ip_address, docker_object):
+
+    docker_object["services"]["balancer"] = {"build": "./balancer",
+                                             "ports": ["1101:80"],
+                                             "depends_on": coordinator_names,
+                                             "networks": {"shared_net": {"ipv4_address": ip_address}}}
+
+    return docker_object
+
+
 docker_object = {"version": "3", "services": {}}
 
 addresses = defaultdict(list)
@@ -31,18 +41,24 @@ docker_object["networks"] = {"shared_net": {"driver": "bridge", "ipam": {"config
 with open('templates/node_standard.yaml', 'r') as file:
     template = yaml.safe_load(file)
 
-
+coordinator_names = list()
 for nodeType in addresses:
 
     cont = 1
     for address in addresses[nodeType]:
+
+        if "BALANCER" in nodeType:
+            docker_object = add_balancer(coordinator_names, f'{PREFIX_IP}.{address}', docker_object)
+            break
+
         service = nodeType.split("_")[0].lower()
         dockerFile = "Mongo.Dockerfile"
         instanceType = nodeType.split("_")[1].lower()
-        command = f'bash -c "cd {service}/common/ && bash execution.sh {cont}"'
+        command = f'bash -c "cd {service}/common/ && bash setup_ssh.sh && bash execution.sh {cont} "'
         ports = [f"{hostPorts[0]}:2801"]
 
         increaseHostPort(0)
+        hostname = f'{service}-{instanceType.lower()}-{cont}'
 
         if "COORD" in nodeType:
             # This is a bit confusing, but it works
@@ -51,9 +67,11 @@ for nodeType in addresses:
             dockerFile = "coordinator.Dockerfile"
             command = f'bash -c "cd {service}/common/ && bash execution.sh {cont} {instanceType}"'
             ports.append(f"{hostPorts[1]}:2802")
+
+            coordinator_names.append(hostname)
+
             increaseHostPort(1)
 
-        hostname = f'{service}-{instanceType.lower()}-{cont}'
         volumes = [f'./{service}:/app/{service}', f'./common:/app/{service}/common']
         ipAddress = f'{PREFIX_IP}.{address}'
 
