@@ -146,7 +146,7 @@ def fix_consistency():
     restoring_id = getIdRequest(timestamp)
     # one of the consistent nodes will have to dump the db
     # the inconsistent ones will use it to restore
-    dump_db(consistent_nodes, restoring_id)
+    dump_db(consistent_nodes, inconsistent_nodes, restoring_id)
     restore_db(inconsistent_nodes, restoring_id)
 
     return response(200, {"msg": "Consistency is fixed now"})
