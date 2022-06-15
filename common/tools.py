@@ -10,6 +10,8 @@ from hashlib import md5
 from collections import defaultdict
 import time
 
+''' This file contains useful functions for the coordinators or the nodes.'''
+
 PREFIX_IP = os.environ.get("PREFIX_IP")
 ID_NODE = int(sys.argv[1])
 RECOVERY_RESPONSE = "In recovery mode."

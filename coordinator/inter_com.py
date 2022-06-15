@@ -3,6 +3,9 @@ from common.coordinator_service import *
 from collections import defaultdict, Counter
 import time
 
+''' This is used for communication between the different services, 
+    i.e. if order service needs to communicate with payment service.'''
+
 DEBUG = True
 
 serviceID = sys.argv[2]
