@@ -37,8 +37,6 @@ class NodeService():
 
         coordinators_available = self.coordinators
 
-        # This code is everywhere and I kind of hate it
-        # maybe we should create a wrapper for python.
         reply = {"status_code": 505}
         while is_invalid_reply(reply):
 
@@ -76,8 +74,6 @@ class NodeService():
 
     def reportDownNodes(self, nodes_down_report):
 
-        # We are aware that if this coordinator is down it will not be forwarded
-        # But is way to complex to install that.
         coord_forward = str(getIndexFromCheck(len(self.coordinators), getIdRequest(str(time.time())))+1)
 
         nodes_down = encodeBase64(json.dumps(nodes_down_report))
@@ -154,7 +150,7 @@ def process_before_request(request, serviceNode):
 
 def process_after_request(returned_response, serviceNode):
 
-    # This is to start the recovery
+    # Recovery starts here
 
     if (serviceNode.isInRecover or serviceNode.collection.is_queue_empty()) is False:
 
@@ -182,7 +178,7 @@ def process_after_request(returned_response, serviceNode):
 
                 if (len(nodes_down_report)-len(unique_responses)) == 1:
                     serviceNode.sendFixConsistencyMsg(id_request)
-                # Here we announce an inconsistency to the coordinator
+                # Here the inconsistency is announced to the coordinator
                 pass
 
     return returned_response

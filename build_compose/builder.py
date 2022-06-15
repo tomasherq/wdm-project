@@ -2,10 +2,7 @@ import yaml
 from collections import defaultdict
 import json
 
-
-def pretty_print(object):
-    print(json.dumps(object, indent=4))
-
+'''This file creates the ../docker-compose.yml file'''
 
 def increaseHostPort(index):
     hostPorts[index] += 1
@@ -26,7 +23,7 @@ docker_object = {"version": "3", "services": {}}
 addresses = defaultdict(list)
 hostPorts = [1102, 8080]
 template = ""
-with open("../env/addresses.env") as file:
+with open("env/addresses.env") as file:
     for line in file:
         if line.strip():
             data_line = line.split("=")
@@ -38,7 +35,7 @@ with open("../env/addresses.env") as file:
 
 
 docker_object["networks"] = {"shared_net": {"driver": "bridge", "ipam": {"config": [{"subnet": f"{PREFIX_IP}.0/24"}]}}}
-with open('templates/node_standard.yaml', 'r') as file:
+with open('build_compose/templates/node_standard.yaml', 'r') as file:
     template = yaml.safe_load(file)
 
 coordinator_names = list()
@@ -94,6 +91,6 @@ for nodeType in addresses:
         cont += 1
 
 
-with open('../docker-compose.yml', 'w') as yaml_file:
+with open('docker-compose.yml', 'w') as yaml_file:
     data = json.dumps(docker_object, indent=4)
     yaml.dump(json.loads(data), yaml_file, indent=4, default_flow_style=False, sort_keys=False)

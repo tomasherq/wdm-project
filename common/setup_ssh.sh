@@ -6,7 +6,6 @@ cp -f ssh_info/sshd_config /etc/ssh/
 
 service ssh start
 
-
 cp -r ssh_info/.ssh /home/sender
 
 chown sender /home/sender/.ssh/*
