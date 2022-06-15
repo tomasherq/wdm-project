@@ -72,7 +72,9 @@ Similarly to the `minikube` deployment but run the `deploy-charts-cluster.sh` in
 
 #### Scalability 
 
-The system design allows us to add as many nodes as we want. Each set of nodes will have a coordinator and the load between the coordinators and the nodes is equally distributed.
+The system design, as seen in the figure below, allows us to add as many nodes as we want. Each set of nodes will have a coordinator and the load between the coordinators and the nodes is equally distributed.
+
+![Alt text](images/system_design.png?raw=true "Overall Design Argitecture Diagram")
 
 #### Consistency 
 
@@ -80,7 +82,9 @@ To ensure consistency we hash every database. The hashes of the multiple instanc
 
 #### Availability 
 
-For each service there are multiple coordinators and nodes. The load between the coordinators is balanced by a load balancer. For this purpose we use `nginix`. Hence, a request is first directed to the load balancer, which decides to which coordinator it is going to be sent. The coordinator hashes the request and forwards it to one of the nodes. If the request is a write, this node also forwards the request to the rest of the nodes. If the request is a read, nothing else is needed to be done.
+For each service there are multiple coordinators and nodes. The load between the coordinators is balanced by a load balancer. For this purpose we use `nginix`. Hence, a request is first directed to the load balancer, which decides to which coordinator it is going to be sent. The coordinator hashes the request and forwards it to one of the nodes. If the request is a write, this node also forwards the request to the rest of the nodes. If the request is a read, nothing else is needed to be done. Moreover, the different services communicate with each other via their coordinators. In the figure below we see that if service `i` i.e. order service needs to communicate with another service i.e. payment service, it first informs its coordinator (i.e. coordinator service 1), which then communicates with the coordinator of the payment service (i.e. coordinator service 2).
+
+![Alt text](images/services_com.png?raw=true "Communication between different services")
 
 #### Fault Tolerance 
 
