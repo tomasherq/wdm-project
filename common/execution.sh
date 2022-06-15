@@ -11,5 +11,4 @@ else
     mongod > /dev/null & 
 fi
 
-
 python3 app.py $1 $2

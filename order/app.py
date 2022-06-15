@@ -4,8 +4,6 @@ from common.node_service import NodeService, process_before_request, process_aft
 import sys
 import logging
 from common.async_calls import send_requests, asyncio
-# I want to make the API directions variables accessible by every service!
-# Keep loggin of the files
 
 app = Flask(f"order-service-{ID_NODE}", "/orders")
 logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.INFO,
@@ -144,7 +142,7 @@ def checkout(order_id):
         app.logger.error(f"Order with orderid: {order_id} is already paid.")
 
         return response(402, {'status_code': 402, 'message': "Order already paid"}, request.headers['Id-request'])
-    # This is to have the order done!
+
     url = f'/pay/{result["user"]}/{order_id}/{float(result["total_cost"])}'
 
     pay_info = serviceNode.sendMessageCoordinator(url, "payment", "POST")

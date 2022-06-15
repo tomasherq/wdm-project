@@ -1,14 +1,10 @@
 import sys
-
 from itsdangerous import base64_encode
-
-
 from common.tools import *
 from common.coordinator_service import *
 
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
-
 coordinatorService = CoordinatorService(serviceID)
 
 
@@ -44,7 +40,6 @@ def catch_all(path):
     headers = {"Id-request": idRequest}
     isReadRequest = request_is_read(request)
 
-    # Problem with hash, the request goes always to the same
     reply = {"status_code": 505}
     while is_invalid_reply(reply):
 

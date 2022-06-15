@@ -109,7 +109,6 @@ def dump_db(coNodesDirections, incoNodesDirections, id):
 def restore_db(nodesDirections, id):
     urls = []
     for nodeDir in nodesDirections:
-        urls.append(f'{nodeDir}/restoreDB/{id}')
-        #process_reply(requests.get(url))
-    
+        urls.append(f'{nodeDir}/restoreDB/{id}') 
     asyncio.new_event_loop().run_until_complete(send_requests(urls, "GET", {}))
+    
