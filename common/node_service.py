@@ -2,6 +2,7 @@ from common.tools import *
 from collections import defaultdict
 from common.async_calls import send_requests, asyncio
 
+'''This file contains common functions used by the node services.'''
 
 class NodeService():
 

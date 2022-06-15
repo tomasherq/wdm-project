@@ -3,6 +3,7 @@ from random import randint
 from common.async_calls import send_requests, asyncio
 import random
 
+'''This file contains common functions used by the coordinators.'''
 
 class CoordinatorService():
     def __init__(self, serviceID):
