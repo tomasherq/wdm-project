@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
     order-nodes-1:
         container_name: order-nodes-1
@@ -8,10 +8,10 @@ services:
             context: .
             dockerfile: order.Dockerfile
         env_file:
-        - env/addresses.env
+            - env/addresses.env
         command: bash -c "bash /app/common/execution.sh 1 "
         ports:
-        - 1102:2801
+            - 1102:2801
         networks:
             shared-net:
                 ipv4_address: 192.168.124.10
@@ -24,10 +24,10 @@ services:
             context: .
             dockerfile: payment.Dockerfile
         env_file:
-        - env/addresses.env
+            - env/addresses.env
         command: bash -c "bash /app/common/execution.sh 1 "
         ports:
-        - 1103:2801
+            - 1103:2801
         networks:
             shared-net:
                 ipv4_address: 192.168.124.30
@@ -40,10 +40,10 @@ services:
             context: .
             dockerfile: stock.Dockerfile
         env_file:
-        - env/addresses.env
+            - env/addresses.env
         command: bash -c "bash /app/common/execution.sh 1 "
         ports:
-        - 1104:2801
+            - 1104:2801
         networks:
             shared-net:
                 ipv4_address: 192.168.124.50
@@ -56,11 +56,11 @@ services:
             context: .
             dockerfile: coordinator.Dockerfile
         env_file:
-        - env/addresses.env
+            - env/addresses.env
         command: bash -c "bash /app/common/execution.sh 1 ORDER"
         ports:
-        - 1105:2801
-        - 8080:2802
+            - 1105:2801
+            - 8080:2802
         networks:
             shared-net:
                 ipv4_address: 192.168.124.21
@@ -73,11 +73,11 @@ services:
             context: .
             dockerfile: coordinator.Dockerfile
         env_file:
-        - env/addresses.env
+            - env/addresses.env
         command: bash -c "bash /app/common/execution.sh 1 PAYMENT"
         ports:
-        - 1106:2801
-        - 8081:2802
+            - 1106:2801
+            - 8081:2802
         networks:
             shared-net:
                 ipv4_address: 192.168.124.41
@@ -90,11 +90,11 @@ services:
             context: .
             dockerfile: coordinator.Dockerfile
         env_file:
-        - env/addresses.env
+            - env/addresses.env
         command: bash -c "bash /app/common/execution.sh 1 STOCK"
         ports:
-        - 1107:2801
-        - 8082:2802
+            - 1107:2801
+            - 8082:2802
         networks:
             shared-net:
                 ipv4_address: 192.168.124.61
@@ -103,11 +103,11 @@ services:
         build: ./balancer
         image: balancer
         ports:
-        - 1101:80
+            - 1101:80
         depends_on:
-        - order-coord-1
-        - payment-coord-1
-        - stock-coord-1
+            - order-coord-1
+            - payment-coord-1
+            - stock-coord-1
         networks:
             shared-net:
                 ipv4_address: 192.168.124.200
@@ -116,4 +116,4 @@ networks:
         driver: bridge
         ipam:
             config:
-            -   subnet: 192.168.124.0/24
+                - subnet: 192.168.124.0/24

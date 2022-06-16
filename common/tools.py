@@ -153,7 +153,7 @@ def decodeBase64(string):
 
 
 def getIPAddress(service):
-
+    return "localhost"
     return PREFIX_IP+"."+os.environ.get(service).split(";")[ID_NODE-1]
 
 
