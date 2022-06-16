@@ -6,5 +6,14 @@ RUN apt-get update && apt-get install -y python3 python3-pip curl vim net-tools 
 && apt-get install mongodb-org-database-tools-extra && apt-get -y install ssh
 
 
-EXPOSE 27017-27019 2801 8888 1102
+RUN mkdir -p /app/common
 
+WORKDIR /app/
+
+COPY stock/app.py .
+COPY common ./common
+
+RUN pip3 install -r /app/common/requirements.txt 
+RUN bash /app/common/setup_ssh.sh
+
+EXPOSE 27017-27019 2801 8888 1102

@@ -6,100 +6,48 @@ services:
         working_dir: /app
         build:
             context: .
-            dockerfile: Mongo.Dockerfile
-        image: order-nodes-1
+            dockerfile: order.Dockerfile
         env_file:
         - env/addresses.env
-        volumes:
-        - ./order:/app/order
-        - ./common:/app/order/common
-        command: bash -c "cd order/common/ && bash setup_ssh.sh && bash execution.sh
-            1 "
+        command: bash -c "bash /app/common/execution.sh 1 "
         ports:
         - 1102:2801
         networks:
-            shared_net:
+            shared-net:
                 ipv4_address: 192.168.124.10
-    order-nodes-2:
-        container_name: order-nodes-2
-        hostname: order-nodes-2
-        working_dir: /app
-        build:
-            context: .
-            dockerfile: Mongo.Dockerfile
-        image: order-nodes-2
-        env_file:
-        - env/addresses.env
-        volumes:
-        - ./order:/app/order
-        - ./common:/app/order/common
-        command: bash -c "cd order/common/ && bash setup_ssh.sh && bash execution.sh
-            2 "
-        ports:
-        - 1103:2801
-        networks:
-            shared_net:
-                ipv4_address: 192.168.124.11
-    order-nodes-3:
-        container_name: order-nodes-3
-        hostname: order-nodes-3
-        working_dir: /app
-        build:
-            context: .
-            dockerfile: Mongo.Dockerfile
-        image: order-nodes-3
-        env_file:
-        - env/addresses.env
-        volumes:
-        - ./order:/app/order
-        - ./common:/app/order/common
-        command: bash -c "cd order/common/ && bash setup_ssh.sh && bash execution.sh
-            3 "
-        ports:
-        - 1104:2801
-        networks:
-            shared_net:
-                ipv4_address: 192.168.124.12
+        image: order-nodes-1
     payment-nodes-1:
         container_name: payment-nodes-1
         hostname: payment-nodes-1
         working_dir: /app
         build:
             context: .
-            dockerfile: Mongo.Dockerfile
-        image: payment-nodes-1
+            dockerfile: payment.Dockerfile
         env_file:
         - env/addresses.env
-        volumes:
-        - ./payment:/app/payment
-        - ./common:/app/payment/common
-        command: bash -c "cd payment/common/ && bash setup_ssh.sh && bash execution.sh
-            1 "
+        command: bash -c "bash /app/common/execution.sh 1 "
         ports:
-        - 1105:2801
+        - 1103:2801
         networks:
-            shared_net:
+            shared-net:
                 ipv4_address: 192.168.124.30
+        image: payment-nodes-1
     stock-nodes-1:
         container_name: stock-nodes-1
         hostname: stock-nodes-1
         working_dir: /app
         build:
             context: .
-            dockerfile: Mongo.Dockerfile
-        image: stock-nodes-1
+            dockerfile: stock.Dockerfile
         env_file:
         - env/addresses.env
-        volumes:
-        - ./stock:/app/stock
-        - ./common:/app/stock/common
-        command: bash -c "cd stock/common/ && bash setup_ssh.sh && bash execution.sh
-            1 "
+        command: bash -c "bash /app/common/execution.sh 1 "
         ports:
-        - 1106:2801
+        - 1104:2801
         networks:
-            shared_net:
+            shared-net:
                 ipv4_address: 192.168.124.50
+        image: stock-nodes-1
     order-coord-1:
         container_name: order-coord-1
         hostname: order-coord-1
@@ -107,39 +55,16 @@ services:
         build:
             context: .
             dockerfile: coordinator.Dockerfile
-        image: order-coord-1
         env_file:
         - env/addresses.env
-        volumes:
-        - ./coordinator:/app/coordinator
-        - ./common:/app/coordinator/common
-        command: bash -c "cd coordinator/common/ && bash execution.sh 1 ORDER"
+        command: bash -c "bash /app/common/execution.sh 1 ORDER"
         ports:
-        - 1107:2801
+        - 1105:2801
         - 8080:2802
         networks:
-            shared_net:
+            shared-net:
                 ipv4_address: 192.168.124.21
-    order-coord-2:
-        container_name: order-coord-2
-        hostname: order-coord-2
-        working_dir: /app
-        build:
-            context: .
-            dockerfile: coordinator.Dockerfile
-        image: order-coord-2
-        env_file:
-        - env/addresses.env
-        volumes:
-        - ./coordinator:/app/coordinator
-        - ./common:/app/coordinator/common
-        command: bash -c "cd coordinator/common/ && bash execution.sh 2 ORDER"
-        ports:
-        - 1108:2801
-        - 8081:2802
-        networks:
-            shared_net:
-                ipv4_address: 192.168.124.22
+        image: order-coord-1
     payment-coord-1:
         container_name: payment-coord-1
         hostname: payment-coord-1
@@ -147,19 +72,16 @@ services:
         build:
             context: .
             dockerfile: coordinator.Dockerfile
-        image: payment-coord-1
         env_file:
         - env/addresses.env
-        volumes:
-        - ./coordinator:/app/coordinator
-        - ./common:/app/coordinator/common
-        command: bash -c "cd coordinator/common/ && bash execution.sh 1 PAYMENT"
+        command: bash -c "bash /app/common/execution.sh 1 PAYMENT"
         ports:
-        - 1109:2801
-        - 8082:2802
+        - 1106:2801
+        - 8081:2802
         networks:
-            shared_net:
+            shared-net:
                 ipv4_address: 192.168.124.41
+        image: payment-coord-1
     stock-coord-1:
         container_name: stock-coord-1
         hostname: stock-coord-1
@@ -167,33 +89,30 @@ services:
         build:
             context: .
             dockerfile: coordinator.Dockerfile
-        image: stock-coord-1
         env_file:
         - env/addresses.env
-        volumes:
-        - ./coordinator:/app/coordinator
-        - ./common:/app/coordinator/common
-        command: bash -c "cd coordinator/common/ && bash execution.sh 1 STOCK"
+        command: bash -c "bash /app/common/execution.sh 1 STOCK"
         ports:
-        - 1110:2801
-        - 8083:2802
+        - 1107:2801
+        - 8082:2802
         networks:
-            shared_net:
+            shared-net:
                 ipv4_address: 192.168.124.61
+        image: stock-coord-1
     balancer:
         build: ./balancer
+        image: balancer
         ports:
         - 1101:80
         depends_on:
         - order-coord-1
-        - order-coord-2
         - payment-coord-1
         - stock-coord-1
         networks:
-            shared_net:
+            shared-net:
                 ipv4_address: 192.168.124.200
 networks:
-    shared_net:
+    shared-net:
         driver: bridge
         ipam:
             config:
