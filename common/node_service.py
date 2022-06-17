@@ -124,9 +124,12 @@ class NodeService():
         os.system(command)
 
     def restoreDB(self, id):
+        self.isInRecover = True
         service = self.service.lower()
         command = f'./common/db_restore/restore_db.sh {service} {id}'
         os.system(command)
+        # After the command is executed, the node is no longer in recover mode
+        self.isInRecover = False
 
     def aliveResponse(self):
         return response(200, {"alive": self.full_address, "status_code": 200})
