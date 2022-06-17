@@ -9,8 +9,6 @@ app = Flask(f"payment-service-{ID_NODE}")
 
 serviceNode = NodeService("payment")
 
-# TODO:Remove all non used stuff from functions
-
 
 @app.before_request
 def preprocess():
@@ -22,9 +20,9 @@ def getHash():
     return serviceNode.getHash()
 
 
-@app.get('/dumpDB/<id>')
-def dumpDB(id: str):
-    return serviceNode.dumpDB(id)
+@app.get('/dumpDB/<id>/<inconsistent_nodes>')
+def dumpDB(id: str, inconsistent_nodes: str):
+    return serviceNode.dumpDB(id, inconsistent_nodes)
 
 
 @app.get('/restoreDB/<id>')
@@ -101,7 +99,6 @@ def add_credit(user_id: str, amount: float):
 
     serviceNode.collection.update_one(query, newvalues)
     return response(200, {"status_code": 200, "done": True}, request.headers['Id-request'])
-    # return response(200, f"Updated, new credit: {user_credit}", request.headers['Id-request'])
 
 
 @app.post('/pay/<user_id>/<order_id>/<float:amount>')

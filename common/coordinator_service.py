@@ -3,6 +3,8 @@ from random import randint
 from common.async_calls import send_requests, asyncio
 import random
 
+'''This file contains common functions used by the coordinators.'''
+
 
 class CoordinatorService():
     def __init__(self, serviceID):
@@ -98,17 +100,18 @@ def get_hash(nodesDirections):
     return node_dirs, responses
 
 
-def dump_db(nodesDirections, id):
+def dump_db(coNodesDirections, incoNodesDirections, id_node):
+    # prepare the list of inconsistent nodes
+    inconsistent_list = [s.replace("http://", "") for s in incoNodesDirections]
+    inconsistent_nodes = ';'.join(inconsistent_list)
     # from the consistent dbs select a random one to dump the db to a file
-    nodeDir = random.choice(nodesDirections)
-    url = f'{nodeDir}/dumpDB/{id}'
+    nodeDir = random.choice(coNodesDirections)
+    url = f'{nodeDir}/dumpDB/{id_node}/{inconsistent_nodes}'
     process_reply(requests.get(url))
 
 
-def restore_db(nodesDirections, id):
+def restore_db(nodesDirections, id_node):
     urls = []
     for nodeDir in nodesDirections:
-        urls.append(f'{nodeDir}/restoreDB/{id}')
-        # process_reply(requests.get(url))
-
+        urls.append(f'{nodeDir}/restoreDB/{id_node}')
     asyncio.new_event_loop().run_until_complete(send_requests(urls, "GET", {}))

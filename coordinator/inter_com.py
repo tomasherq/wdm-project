@@ -1,16 +1,17 @@
 from common.tools import *
 from common.coordinator_service import *
-
 from collections import defaultdict, Counter
 import time
 
-DEBUG = True
+''' This is used for communication between the different services, 
+    i.e. if order service needs to communicate with payment service.'''
 
+DEBUG = True
 
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}-internal")
-# Each one of the services will run an instance, run in a different port and have different clients
 
+# Each one of the services will run an instance, run in a different port and have different clients
 
 replies = defaultdict(lambda: {})
 coordinatorService = CoordinatorService(serviceID)
@@ -62,8 +63,6 @@ def catch_all(request_info):
     reply = {"status_code": 505}
     while is_invalid_reply(reply) and len(coordinatorsService) > 0:
 
-        # We could make them talk directly through this port but it complicates a lot the logic
-
         coordinator_choosen = coordinatorsService[getIndexFromCheck(len(coordinatorsService), idRequest)]
 
         url = f'{coordinator_choosen}/{prefixUrl}{requestInfo["url"]}'
@@ -81,8 +80,6 @@ def catch_all(request_info):
 @app.post('/down_nodes/<nodes_down_raw>')
 def report_down_nodes(nodes_down_raw: str):
     nodes_down = json.loads(decodeBase64(nodes_down_raw))
-
-    # This one has to report to the other one, we can do this with a file actually
 
     if len(nodes_down) > 0:
         coordinatorService.removeNodes(nodes_down)
@@ -103,22 +100,21 @@ def fix_consistency():
     for item in responses:
         hashes.append(item["hash"])
 
-    # find the most common hash
+    # Find the most common hash
     counter_responses = Counter(hashes)
     common_hash = max(hashes, key=hashes.count)
     times_common_hash = counter_responses[common_hash]
 
-    # find the consistent and inconsistent nodes
+    # Find the consistent and inconsistent nodes
     consistent_nodes = []
     inconsistent_nodes = []
 
-    # check if more than one databases have the same common hash
+    # Check if more than one databases have the same common hash
     count = 0
     for ele in counter_responses:
         if counter_responses[ele] == times_common_hash:
             count = count+1
     if count <= 1:
-        # We found the most common hash. This is the variable common_hash"
         for n in range(len(node_dir)):
             if hashes[n] == common_hash:
                 consistent_nodes.append(node_dir[n])
@@ -126,8 +122,7 @@ def fix_consistency():
                 inconsistent_nodes.append(node_dir[n])
 
     else:
-        # Need to check time of last update
-
+        # Check time of last update
         timestamps = list()
         for item in responses:
             timestamps.append(item["timestamp"])
@@ -140,12 +135,12 @@ def fix_consistency():
         inconsistent_nodes = node_dir
         inconsistent_nodes.remove(node_last_updated)
 
-    # create an id for the restoring process using the current timestamp
+    # Create an id for the restoring process using the current timestamp
     timestamp = str(time.time())
     restoring_id = getIdRequest(timestamp)
-    # one of the consistent nodes will have to dump the db
-    # the inconsistent ones will use it to restore
-    dump_db(consistent_nodes, restoring_id)
+    # One of the consistent nodes will have to dump the db
+    # The inconsistent ones will use it to restore
+    dump_db(consistent_nodes, inconsistent_nodes, restoring_id)
     restore_db(inconsistent_nodes, restoring_id)
 
     return response(200, {"msg": "Consistency is fixed now"})

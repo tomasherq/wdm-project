@@ -23,16 +23,13 @@ with open("env/addresses.env") as file:
     for line in file_data.split("\n"):
         if line.strip():
             data_line = line.split("=")
-
             if "PREFIX_IP" == data_line[0]:
                 PREFIX_IP = data_line[1].strip()
             else:
 
                 addresses[data_line[0]] = data_line[1].strip().split(";")
 
-
 for address_type in addresses:
-
     if "COORD" in address_type:
         lines_replace = ""
         counter = 1
@@ -42,7 +39,6 @@ for address_type in addresses:
                 full_address = "-".join(address_type.lower().split("_")[:-1])+"-"+str(counter)
                 counter += 1
             lines_replace += TEMPLATE_SERVER.replace("##IP_ADDRESS##", full_address)
-
         CONFIG_INFO = CONFIG_INFO.replace(address_type, lines_replace[:-1])
 
 

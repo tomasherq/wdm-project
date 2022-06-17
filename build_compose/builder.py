@@ -1,6 +1,10 @@
 import yaml
 from collections import defaultdict
 import json
+
+'''This file creates the ../docker-compose.yml file'''
+
+
 # This can be changed to another location
 DOCKER_REPO = "tomashq98/wdm"
 

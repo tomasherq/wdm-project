@@ -10,20 +10,12 @@ from hashlib import md5
 from collections import defaultdict
 import time
 
-# test if sync works
-
-# PASSWORD = os.environ.get('MONGO_PASSWORD')
+''' This file contains useful functions for the coordinators or the nodes.'''
 
 KUBERNETES = os.environ.get("KUBERNETES") == "1"
 PREFIX_IP = os.environ.get("PREFIX_IP")
 ID_NODE = int(sys.argv[1])
 RECOVERY_RESPONSE = "In recovery mode."
-
-
-# Maybe we should check if the reply from Mongo is successful?
-# Or we could not notify the user, just enqueue. Will be succesful until queried again
-
-# Extra feature that can be used for consistency.
 
 
 class CollectionWrapperMongo():
@@ -186,8 +178,6 @@ def getIdRequest(sentence):
 
 
 def getIndexFromCheck(nNodes, md5Id):
-
-    # LIMITATION: Same order executed will get the same Id, so it might be that a node is overloaded....
 
     checkNum = ''
     for i in md5Id:

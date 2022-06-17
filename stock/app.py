@@ -3,11 +3,9 @@ from email import message
 from common.tools import *
 from common.node_service import NodeService, process_before_request, process_after_request
 
-
 app = Flask(f"stock-service-{ID_NODE}")
 
 serviceNode = NodeService("stock")
-
 
 @app.before_request
 def preprocess():
@@ -19,9 +17,9 @@ def getHash():
     return serviceNode.getHash()
 
 
-@app.get('/dumpDB/<id>')
-def dumpDB(id: str):
-    return serviceNode.dumpDB(id)
+@app.get('/dumpDB/<id>/<inconsistent_nodes>')
+def dumpDB(id: str, inconsistent_nodes: str):
+    return serviceNode.dumpDB(id, inconsistent_nodes)
 
 
 @app.get('/restoreDB/<id>')
@@ -136,8 +134,6 @@ def check_availability(item_id: str):
         return response(404, {'status_code': 404, 'message': "Item not found"}, request.headers['Id-request'])
 
     return response(200, {"status_code": 200, "stock": result["stock"], "price": result["price"]}, request.headers['Id-request'])
-
-# This is the detection of inconsistencies
 
 
 @app.after_request
