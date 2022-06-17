@@ -19,9 +19,15 @@ class NodeService():
 
         self.isInRecover = False
 
-        self.full_address = f"http://"+self.ip_address+":2801"
+        # If Kubernetes is active we have to send
+        if self.ip_address != '0.0.0.0':
+            self.full_address = f"http://{self.service}-nodes-{ID_NODE}:2801"
+        else:
+            self.full_address = f"http://"+self.ip_address+":2801"
 
-        self.peer_nodes.remove("http://"+self.ip_address+":2801")
+        if self.full_address in self.peer_nodes:
+
+            self.peer_nodes.remove("http://"+self.ip_address+":2801")
 
         self.dropCollection()
 

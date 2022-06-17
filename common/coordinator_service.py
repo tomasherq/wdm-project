@@ -29,14 +29,16 @@ class CoordinatorService():
 
     def checkUpNodes(self):
 
-        if self.check_alive_limiter == 0:
+        if self.check_alive_limiter <= 0:
             urls = list()
-            for node in self.nodesUp:
+            for node in self.nodesDown:
                 urls.append(f"{node}/alive")
 
             replies = asyncio.new_event_loop().run_until_complete(send_requests(urls, "GET", {}))
             save_new = False
+
             for reply in replies:
+
                 if "alive" in reply:
                     nodeUp = json.loads(reply)["alive"]
 
@@ -45,11 +47,11 @@ class CoordinatorService():
                         self.nodesUp.append(nodeUp)
             if save_new:
                 self.saveUpNodes("inter")
+
+            if self.check_alive_limiter == 0:
+                self.check_alive_limiter += 5
             else:
-                if self.check_alive_limiter == 0:
-                    self.check_alive_limiter += 5
-                else:
-                    self.check_alive_limiter += int(self.check_alive_limiter*0.1)
+                self.check_alive_limiter += int(self.check_alive_limiter*0.1)
         else:
             self.check_alive_limiter -= 1
 
@@ -100,13 +102,13 @@ def dump_db(nodesDirections, id):
     # from the consistent dbs select a random one to dump the db to a file
     nodeDir = random.choice(nodesDirections)
     url = f'{nodeDir}/dumpDB/{id}'
-    process_reply(requests.get(url))       
-     
+    process_reply(requests.get(url))
+
 
 def restore_db(nodesDirections, id):
     urls = []
     for nodeDir in nodesDirections:
         urls.append(f'{nodeDir}/restoreDB/{id}')
-        #process_reply(requests.get(url))
-    
+        # process_reply(requests.get(url))
+
     asyncio.new_event_loop().run_until_complete(send_requests(urls, "GET", {}))

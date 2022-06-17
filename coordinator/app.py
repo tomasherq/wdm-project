@@ -15,7 +15,9 @@ coordinatorService = CoordinatorService(serviceID)
 @app.before_request
 def load_up_nodes():
     coordinatorService.loadUpNodes("general")
-    coordinatorService.checkUpNodes()
+
+    if len(coordinatorService.nodesUp) != len(coordinatorService.nodesDirections) or True:
+        coordinatorService.checkUpNodes()
 
     if request.remote_addr in coordinatorService.nodesDirections:
         return response(403, "Not authorized.")

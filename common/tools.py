@@ -13,9 +13,12 @@ import time
 # test if sync works
 
 # PASSWORD = os.environ.get('MONGO_PASSWORD')
+
+KUBERNETES = os.environ.get("KUBERNETES") == "1"
 PREFIX_IP = os.environ.get("PREFIX_IP")
 ID_NODE = int(sys.argv[1])
 RECOVERY_RESPONSE = "In recovery mode."
+
 
 # Maybe we should check if the reply from Mongo is successful?
 # Or we could not notify the user, just enqueue. Will be succesful until queried again
@@ -153,14 +156,28 @@ def decodeBase64(string):
 
 
 def getIPAddress(service):
-    return "localhost"
+    if KUBERNETES:
+        return "-".join(service.lower().split("_")[:-1])+f"-{ID_NODE}"
+
     return PREFIX_IP+"."+os.environ.get(service).split(";")[ID_NODE-1]
 
 
 def getAddresses(service, port=2801):
     addresses = list()
+
     for address in os.environ.get(service).split(";"):
         addresses.append(f'http://{PREFIX_IP}.{address}:{port}')
+
+    if KUBERNETES:
+        amount_addresses = len(addresses)
+        counter_addresses = 1
+        name_service = "http://"+"-".join(service.lower().split("_")[:-1])
+        addresses = list()
+
+        while counter_addresses <= amount_addresses:
+            addresses.append(f'{name_service}-{counter_addresses}:{port}')
+            counter_addresses += 1
+
     return addresses
 
 

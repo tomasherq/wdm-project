@@ -1,7 +1,7 @@
 import yaml
 from collections import defaultdict
 import json
-
+# This can be changed to another location
 DOCKER_REPO = "tomashq98/wdm"
 
 
@@ -40,8 +40,12 @@ hostPorts = [1102, 8080]
 template = ""
 with open("env/addresses.env") as file:
     for line in file:
+
         if line.strip():
             data_line = line.split("=")
+
+            if "KUBERNETES" in line:
+                continue
 
             if "PREFIX_IP" == data_line[0]:
                 PREFIX_IP = data_line[1].strip()
@@ -68,7 +72,7 @@ for nodeType in addresses:
 
         dockerFile = f"{service}.Dockerfile"
         instanceType = nodeType.split("_")[1].lower()
-        command = f'bash -c "bash /app/common/execution.sh {cont} "'
+        command = f'bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh {cont} "'
         ports = [f"{hostPorts[0]}:2801"]
 
         increaseHostPort(0)

@@ -9,7 +9,9 @@ services:
             dockerfile: order.Dockerfile
         env_file:
             - env/addresses.env
-        command: bash -c "bash /app/common/execution.sh 1 "
+        command:
+            bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+            1 "
         ports:
             - 1102:2801
         networks:
@@ -25,7 +27,9 @@ services:
             dockerfile: payment.Dockerfile
         env_file:
             - env/addresses.env
-        command: bash -c "bash /app/common/execution.sh 1 "
+        command:
+            bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+            1 "
         ports:
             - 1103:2801
         networks:
@@ -41,7 +45,9 @@ services:
             dockerfile: stock.Dockerfile
         env_file:
             - env/addresses.env
-        command: bash -c "bash /app/common/execution.sh 1 "
+        command:
+            bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+            1 "
         ports:
             - 1104:2801
         networks:

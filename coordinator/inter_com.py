@@ -9,7 +9,6 @@ DEBUG = True
 
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}-internal")
-DEBUG = True
 # Each one of the services will run an instance, run in a different port and have different clients
 
 

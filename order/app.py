@@ -1,15 +1,12 @@
 
 from common.tools import *
 from common.node_service import NodeService, process_before_request, process_after_request
-import sys
-import logging
 from common.async_calls import send_requests, asyncio
 # I want to make the API directions variables accessible by every service!
 # Keep loggin of the files
 
 app = Flask(f"order-service-{ID_NODE}", "/orders")
-logging.basicConfig(filename=f"/var/log/order-service-{ID_NODE}", level=logging.INFO,
-                    format=f"%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s")
+
 
 serviceNode = NodeService("order")
 
