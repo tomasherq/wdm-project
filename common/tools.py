@@ -12,9 +12,11 @@ import time
 
 ''' This file contains useful functions for the coordinators or the nodes.'''
 
+KUBERNETES = os.environ.get("KUBERNETES") == "1"
 PREFIX_IP = os.environ.get("PREFIX_IP")
 ID_NODE = int(sys.argv[1])
 RECOVERY_RESPONSE = "In recovery mode."
+
 
 class CollectionWrapperMongo():
     '''The pourpose of this function is enabiling logging of the information.
@@ -119,6 +121,8 @@ def response(status, object, id_request=None):
     if id_request is not None:
         response.headers["Id-request"] = id_request
 
+    response.headers["Content-Type"] = "application/json"
+
     return response
 
 
@@ -146,14 +150,28 @@ def decodeBase64(string):
 
 
 def getIPAddress(service):
+    if KUBERNETES:
+        return "-".join(service.lower().split("_")[:-1])+f"-{ID_NODE}"
 
     return PREFIX_IP+"."+os.environ.get(service).split(";")[ID_NODE-1]
 
 
 def getAddresses(service, port=2801):
     addresses = list()
+
     for address in os.environ.get(service).split(";"):
         addresses.append(f'http://{PREFIX_IP}.{address}:{port}')
+
+    if KUBERNETES:
+        amount_addresses = len(addresses)
+        counter_addresses = 1
+        name_service = "http://"+"-".join(service.lower().split("_")[:-1])
+        addresses = list()
+
+        while counter_addresses <= amount_addresses:
+            addresses.append(f'{name_service}-{counter_addresses}:{port}')
+            counter_addresses += 1
+
     return addresses
 
 
@@ -202,6 +220,8 @@ def process_reply(data_reply, return_raw=False):
 
     if isinstance(data_reply, dict) and "status_code" in data_reply and data_reply["status_code"] == 505:
         return data_reply
+
+    #  data_reply.json()
     try:
         return data_reply.text if return_raw else json.loads(data_reply.text)
     except:

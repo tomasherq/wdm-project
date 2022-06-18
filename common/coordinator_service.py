@@ -5,6 +5,7 @@ import random
 
 '''This file contains common functions used by the coordinators.'''
 
+
 class CoordinatorService():
     def __init__(self, serviceID):
         self.serviceID = sys.argv[2]
@@ -30,14 +31,16 @@ class CoordinatorService():
 
     def checkUpNodes(self):
 
-        if self.check_alive_limiter == 0:
+        if self.check_alive_limiter <= 0:
             urls = list()
-            for node in self.nodesUp:
+            for node in self.nodesDown:
                 urls.append(f"{node}/alive")
 
             replies = asyncio.new_event_loop().run_until_complete(send_requests(urls, "GET", {}))
             save_new = False
+
             for reply in replies:
+
                 if "alive" in reply:
                     nodeUp = json.loads(reply)["alive"]
 
@@ -46,11 +49,11 @@ class CoordinatorService():
                         self.nodesUp.append(nodeUp)
             if save_new:
                 self.saveUpNodes("inter")
+
+            if self.check_alive_limiter == 0:
+                self.check_alive_limiter += 5
             else:
-                if self.check_alive_limiter == 0:
-                    self.check_alive_limiter += 5
-                else:
-                    self.check_alive_limiter += int(self.check_alive_limiter*0.1)
+                self.check_alive_limiter += int(self.check_alive_limiter*0.1)
         else:
             self.check_alive_limiter -= 1
 
@@ -97,19 +100,18 @@ def get_hash(nodesDirections):
     return node_dirs, responses
 
 
-def dump_db(coNodesDirections, incoNodesDirections, id):
+def dump_db(coNodesDirections, incoNodesDirections, id_node):
     # prepare the list of inconsistent nodes
     inconsistent_list = [s.replace("http://", "") for s in incoNodesDirections]
     inconsistent_nodes = ';'.join(inconsistent_list)
     # from the consistent dbs select a random one to dump the db to a file
     nodeDir = random.choice(coNodesDirections)
-    url = f'{nodeDir}/dumpDB/{id}/{inconsistent_nodes}'
-    process_reply(requests.get(url))       
-     
+    url = f'{nodeDir}/dumpDB/{id_node}/{inconsistent_nodes}'
+    process_reply(requests.get(url))
 
-def restore_db(nodesDirections, id):
+
+def restore_db(nodesDirections, id_node):
     urls = []
     for nodeDir in nodesDirections:
-        urls.append(f'{nodeDir}/restoreDB/{id}') 
+        urls.append(f'{nodeDir}/restoreDB/{id_node}')
     asyncio.new_event_loop().run_until_complete(send_requests(urls, "GET", {}))
-    

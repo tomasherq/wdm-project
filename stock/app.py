@@ -7,6 +7,7 @@ app = Flask(f"stock-service-{ID_NODE}")
 
 serviceNode = NodeService("stock")
 
+
 @app.before_request
 def preprocess():
     return process_before_request(request, serviceNode)
@@ -48,8 +49,10 @@ def get_item(item_id):
     return serviceNode.collection.find_one({"_id": item_id})
 
 
-@app.post('/item/create/<float:price>')
+@app.post('/item/create/<price>')
 def create_item(price: float):
+
+    price = float(price)
     item_id = request.headers["Id-object"]
     timestamp = request.headers["Timestamp"]
     serviceNode.collection.insert_one({"_id": item_id, "price": price, "stock": 0, "timestamp": timestamp})

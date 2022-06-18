@@ -5,3 +5,4 @@ env/mongo.env
 test_async.py
 restored_files
 test.py
+k8s/*.yaml

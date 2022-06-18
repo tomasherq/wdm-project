@@ -4,6 +4,7 @@ from common.async_calls import send_requests, asyncio
 
 '''This file contains common functions used by the node services.'''
 
+
 class NodeService():
 
     def __init__(self, service):
@@ -20,9 +21,15 @@ class NodeService():
 
         self.isInRecover = False
 
-        self.full_address = f"http://"+self.ip_address+":2801"
+        # If Kubernetes is active we have to send
+        if self.ip_address != '0.0.0.0':
+            self.full_address = f"http://{self.service}-nodes-{ID_NODE}:2801"
+        else:
+            self.full_address = f"http://"+self.ip_address+":2801"
 
-        self.peer_nodes.remove("http://"+self.ip_address+":2801")
+        if self.full_address in self.peer_nodes:
+
+            self.peer_nodes.remove("http://"+self.ip_address+":2801")
 
         self.dropCollection()
 
@@ -115,9 +122,12 @@ class NodeService():
         os.system(command)
 
     def restoreDB(self, id):
+        self.isInRecover = True
         service = self.service.lower()
         command = f'./common/db_restore/restore_db.sh {service} {id}'
         os.system(command)
+        # After the command is executed, the node is no longer in recover mode
+        self.isInRecover = False
 
     def aliveResponse(self):
         return response(200, {"alive": self.full_address, "status_code": 200})
@@ -138,7 +148,8 @@ def process_before_request(request, serviceNode):
         if responses[id_request]["forward"] is True:
 
             headers = {"Id-object": request.headers["Id-object"],
-                       "Id-request": id_request, "Timestamp": request.headers["Timestamp"]}
+                       "Id-request": id_request, "Timestamp": request.headers["Timestamp"]
+                       }
 
             results = {}
             try:

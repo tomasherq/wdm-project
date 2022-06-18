@@ -1,7 +1,7 @@
 import sys
-from itsdangerous import base64_encode
 from common.tools import *
 from common.coordinator_service import *
+from random import randint
 
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
@@ -11,7 +11,9 @@ coordinatorService = CoordinatorService(serviceID)
 @app.before_request
 def load_up_nodes():
     coordinatorService.loadUpNodes("general")
-    coordinatorService.checkUpNodes()
+
+    if len(coordinatorService.nodesUp) != len(coordinatorService.nodesDirections) or True:
+        coordinatorService.checkUpNodes()
 
     if request.remote_addr in coordinatorService.nodesDirections:
         return response(403, "Not authorized.")
@@ -34,8 +36,8 @@ def check_consistency():
 
 @app.route(f'/{coordinatorService.service}/<path:path>', methods=['POST', 'GET', 'DELETE'])
 def catch_all(path):
-
-    idRequest = getIdRequest(path)
+    timestamp = str(time.time())
+    idRequest = getIdRequest(timestamp+str(randint(0, 100000)))
 
     headers = {"Id-request": idRequest}
     isReadRequest = request_is_read(request)
@@ -47,9 +49,7 @@ def catch_all(path):
 
         if not isReadRequest:
             headers["Redirect"] = "1"
-            timestamp = str(time.time())
-            idObject = getIdRequest(timestamp+"-"+nodeDir)
-            headers["Id-object"] = idObject
+            headers["Id-object"] = idRequest
             headers["Timestamp"] = timestamp
 
         url = f'{nodeDir}/{path}'
