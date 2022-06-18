@@ -51,20 +51,20 @@ This project implements a set of microservices for a shopping cart.
 
 In order to create a docker-compose file it is needed to run `python3 build_compose/builder.py`. The number of nodes for each service is defined in the file env/addresses.env. This file contains the first part of the IP addresses that we will use as "PREFIX_IP" and the last 1-3 digits that will be used for the nodes/coordinators of each service (separated by semicoloms).
 
-After creating the docker-compose.yml file in the main folder you can run `docker-compose up --build` to start the whole shopping cart service.
+After creating the docker-compose.yml file in the main folder you can run `docker-compose up --build` to start the whole shopping cart service. 
 
 ***Requirements:*** You need to have docker and docker-compose installed on your machine.
 
 #### minikube (local k8s cluster)
 
 This setup is for local k8s testing to see if your k8s config works before deploying to the cloud. 
-First copy the docker images (in case of being a developer) with `bash docker-push-images.sh`, then make the scripts to deployment for kubernetes using `bash deploy-charts-minikube.sh`. 
+First copy the docker images (in case of being a developer) with `bash docker-push-images.sh`. If one wants to change the number of nodes he/she can change use their own docker reposiory to upload the new images.After this step, we can make the scripts to deployment for kubernetes using `bash deploy-charts-minikube.sh`. 
 
 The scripts will be at the k8s folder, you can go inside and run `kubectl apply -f .` in order to start your cluster. 
 
 Once the cluster is running you may forward the port of the nginx service to a port of your local machine with `kubectl port-forward service/balancer 5000:80` in order to be able to query the service.
 
-***Requirements:*** You need to have minikube (with ingress enabled) and kompose installed on your machine.
+***Requirements:*** You need to have minikube (with ingress enabled) and kompose installed on your machine. You need also a docker-compose.yml file for creating the kubernetes execution files.
 
 #### kubernetes cluster (managed k8s cluster in the cloud)
 
