@@ -1,4 +1,4 @@
-version: "3"
+version: '3'
 services:
     order-nodes-1:
         container_name: order-nodes-1
@@ -8,16 +8,49 @@ services:
             context: .
             dockerfile: order.Dockerfile
         env_file:
-            - env/addresses.env
-        command:
-            bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+        - env/addresses.env
+        command: bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
             1 "
         ports:
-            - 1102:2801
+        - 1102:2801
         networks:
             shared-net:
                 ipv4_address: 192.168.124.10
         image: order-nodes-1
+    order-nodes-2:
+        container_name: order-nodes-2
+        hostname: order-nodes-2
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: order.Dockerfile
+        env_file:
+        - env/addresses.env
+        command: bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+            2 "
+        ports:
+        - 1103:2801
+        networks:
+            shared-net:
+                ipv4_address: 192.168.124.11
+        image: order-nodes-2
+    order-nodes-3:
+        container_name: order-nodes-3
+        hostname: order-nodes-3
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: order.Dockerfile
+        env_file:
+        - env/addresses.env
+        command: bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+            3 "
+        ports:
+        - 1104:2801
+        networks:
+            shared-net:
+                ipv4_address: 192.168.124.12
+        image: order-nodes-3
     payment-nodes-1:
         container_name: payment-nodes-1
         hostname: payment-nodes-1
@@ -26,16 +59,49 @@ services:
             context: .
             dockerfile: payment.Dockerfile
         env_file:
-            - env/addresses.env
-        command:
-            bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+        - env/addresses.env
+        command: bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
             1 "
         ports:
-            - 1103:2801
+        - 1105:2801
         networks:
             shared-net:
                 ipv4_address: 192.168.124.30
         image: payment-nodes-1
+    payment-nodes-2:
+        container_name: payment-nodes-2
+        hostname: payment-nodes-2
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: payment.Dockerfile
+        env_file:
+        - env/addresses.env
+        command: bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+            2 "
+        ports:
+        - 1106:2801
+        networks:
+            shared-net:
+                ipv4_address: 192.168.124.31
+        image: payment-nodes-2
+    payment-nodes-3:
+        container_name: payment-nodes-3
+        hostname: payment-nodes-3
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: payment.Dockerfile
+        env_file:
+        - env/addresses.env
+        command: bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+            3 "
+        ports:
+        - 1107:2801
+        networks:
+            shared-net:
+                ipv4_address: 192.168.124.32
+        image: payment-nodes-3
     stock-nodes-1:
         container_name: stock-nodes-1
         hostname: stock-nodes-1
@@ -44,16 +110,49 @@ services:
             context: .
             dockerfile: stock.Dockerfile
         env_file:
-            - env/addresses.env
-        command:
-            bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+        - env/addresses.env
+        command: bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
             1 "
         ports:
-            - 1104:2801
+        - 1108:2801
         networks:
             shared-net:
                 ipv4_address: 192.168.124.50
         image: stock-nodes-1
+    stock-nodes-2:
+        container_name: stock-nodes-2
+        hostname: stock-nodes-2
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: stock.Dockerfile
+        env_file:
+        - env/addresses.env
+        command: bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+            2 "
+        ports:
+        - 1109:2801
+        networks:
+            shared-net:
+                ipv4_address: 192.168.124.51
+        image: stock-nodes-2
+    stock-nodes-3:
+        container_name: stock-nodes-3
+        hostname: stock-nodes-3
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: stock.Dockerfile
+        env_file:
+        - env/addresses.env
+        command: bash -c "bash /app/common/setup_ssh.sh && bash /app/common/execution.sh
+            3 "
+        ports:
+        - 1110:2801
+        networks:
+            shared-net:
+                ipv4_address: 192.168.124.52
+        image: stock-nodes-3
     order-coord-1:
         container_name: order-coord-1
         hostname: order-coord-1
@@ -62,15 +161,32 @@ services:
             context: .
             dockerfile: coordinator.Dockerfile
         env_file:
-            - env/addresses.env
+        - env/addresses.env
         command: bash -c "bash /app/common/execution.sh 1 ORDER"
         ports:
-            - 1105:2801
-            - 8080:2802
+        - 1111:2801
+        - 8880:2802
         networks:
             shared-net:
                 ipv4_address: 192.168.124.21
         image: order-coord-1
+    order-coord-2:
+        container_name: order-coord-2
+        hostname: order-coord-2
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: coordinator.Dockerfile
+        env_file:
+        - env/addresses.env
+        command: bash -c "bash /app/common/execution.sh 2 ORDER"
+        ports:
+        - 1112:2801
+        - 8881:2802
+        networks:
+            shared-net:
+                ipv4_address: 192.168.124.22
+        image: order-coord-2
     payment-coord-1:
         container_name: payment-coord-1
         hostname: payment-coord-1
@@ -79,15 +195,32 @@ services:
             context: .
             dockerfile: coordinator.Dockerfile
         env_file:
-            - env/addresses.env
+        - env/addresses.env
         command: bash -c "bash /app/common/execution.sh 1 PAYMENT"
         ports:
-            - 1106:2801
-            - 8081:2802
+        - 1113:2801
+        - 8882:2802
         networks:
             shared-net:
                 ipv4_address: 192.168.124.41
         image: payment-coord-1
+    payment-coord-2:
+        container_name: payment-coord-2
+        hostname: payment-coord-2
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: coordinator.Dockerfile
+        env_file:
+        - env/addresses.env
+        command: bash -c "bash /app/common/execution.sh 2 PAYMENT"
+        ports:
+        - 1114:2801
+        - 8883:2802
+        networks:
+            shared-net:
+                ipv4_address: 192.168.124.42
+        image: payment-coord-2
     stock-coord-1:
         container_name: stock-coord-1
         hostname: stock-coord-1
@@ -96,24 +229,44 @@ services:
             context: .
             dockerfile: coordinator.Dockerfile
         env_file:
-            - env/addresses.env
+        - env/addresses.env
         command: bash -c "bash /app/common/execution.sh 1 STOCK"
         ports:
-            - 1107:2801
-            - 8082:2802
+        - 1115:2801
+        - 8884:2802
         networks:
             shared-net:
                 ipv4_address: 192.168.124.61
         image: stock-coord-1
+    stock-coord-2:
+        container_name: stock-coord-2
+        hostname: stock-coord-2
+        working_dir: /app
+        build:
+            context: .
+            dockerfile: coordinator.Dockerfile
+        env_file:
+        - env/addresses.env
+        command: bash -c "bash /app/common/execution.sh 2 STOCK"
+        ports:
+        - 1116:2801
+        - 8885:2802
+        networks:
+            shared-net:
+                ipv4_address: 192.168.124.62
+        image: stock-coord-2
     balancer:
         build: ./balancer
         image: balancer
         ports:
-            - 1101:80
+        - 1101:80
         depends_on:
-            - order-coord-1
-            - payment-coord-1
-            - stock-coord-1
+        - order-coord-1
+        - order-coord-2
+        - payment-coord-1
+        - payment-coord-2
+        - stock-coord-1
+        - stock-coord-2
         networks:
             shared-net:
                 ipv4_address: 192.168.124.200
@@ -122,4 +275,4 @@ networks:
         driver: bridge
         ipam:
             config:
-                - subnet: 192.168.124.0/24
+            -   subnet: 192.168.124.0/24

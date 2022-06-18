@@ -121,6 +121,8 @@ def response(status, object, id_request=None):
     if id_request is not None:
         response.headers["Id-request"] = id_request
 
+    response.headers["Content-Type"] = "application/json"
+
     return response
 
 
@@ -218,6 +220,8 @@ def process_reply(data_reply, return_raw=False):
 
     if isinstance(data_reply, dict) and "status_code" in data_reply and data_reply["status_code"] == 505:
         return data_reply
+
+    #  data_reply.json()
     try:
         return data_reply.text if return_raw else json.loads(data_reply.text)
     except:

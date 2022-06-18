@@ -33,14 +33,17 @@ def add_command_file(image_list):
         text += tag_command_template.replace("##name##", image_name)
 
     with open("docker-push-images.sh", "w") as file_push_dock:
+        file_push_dock.write("python3 balancer/nginix_configs/create_config.py kube\n")
+
         file_push_dock.write("docker-compose build\n")
         file_push_dock.write(text)
+        file_push_dock.write("python3 balancer/nginix_configs/create_config.py\n")
 
 
 docker_object = {"version": "3", "services": {}}
 
 addresses = defaultdict(list)
-hostPorts = [1102, 8080]
+hostPorts = [1102, 8880]
 template = ""
 with open("env/addresses.env") as file:
     for line in file:

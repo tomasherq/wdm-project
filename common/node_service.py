@@ -4,6 +4,7 @@ from common.async_calls import send_requests, asyncio
 
 '''This file contains common functions used by the node services.'''
 
+
 class NodeService():
 
     def __init__(self, service):
@@ -147,7 +148,8 @@ def process_before_request(request, serviceNode):
         if responses[id_request]["forward"] is True:
 
             headers = {"Id-object": request.headers["Id-object"],
-                       "Id-request": id_request, "Timestamp": request.headers["Timestamp"]}
+                       "Id-request": id_request, "Timestamp": request.headers["Timestamp"]
+                       }
 
             results = {}
             try:
