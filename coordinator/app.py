@@ -1,7 +1,7 @@
 import sys
 from common.tools import *
 from common.coordinator_service import *
-from random import randint
+import random
 
 serviceID = sys.argv[2]
 app = Flask(f"coord-service-{serviceID}-{ID_NODE}")
@@ -37,7 +37,7 @@ def check_consistency():
 @app.route(f'/{coordinatorService.service}/<path:path>', methods=['POST', 'GET', 'DELETE'])
 def catch_all(path):
     timestamp = str(time.time())
-    idRequest = getIdRequest(timestamp+str(randint(0, 100000)))
+    idRequest = getIdRequest(timestamp+str(random.getrandbits(128)))
 
     headers = {"Id-request": idRequest}
     isReadRequest = request_is_read(request)

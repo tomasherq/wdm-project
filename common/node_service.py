@@ -186,9 +186,8 @@ def process_after_request(returned_response, serviceNode):
                 if len(nodes_down_report) > 0:
                     # If we only have nodes that are down, we do not need to check the consistency
                     serviceNode.reportDownNodes(nodes_down_report)
-
-                if len(unique_responses) > len(nodes_down_report):
-                    serviceNode.sendFixConsistencyMsg(id_request)
                 # Here the inconsistency is announced to the coordinator
+                if (len(unique_responses) - len(nodes_down_report)) > 1:
+                    serviceNode.sendFixConsistencyMsg(id_request)
 
     return returned_response

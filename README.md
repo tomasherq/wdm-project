@@ -51,7 +51,7 @@ This project implements a set of microservices for a shopping cart.
 
 In order to create a docker-compose file it is needed to run `python3 build_compose/builder.py`. The number of nodes for each service is defined in the file env/addresses.env. This file contains the first part of the IP addresses that we will use as "PREFIX_IP" and the last 1-3 digits that will be used for the nodes/coordinators of each service (separated by semicoloms).
 
-After creating the docker-compose.yml file in the main folder you can run `docker-compose up --build` to start the whole shopping cart service. 
+After creating the docker-compose.yml file in the main folder you can run `docker-compose up --build` to start the whole shopping cart service. The access point to query will be the IP of the nginx server (192.168.124.200 at the moment).
 
 ***Requirements:*** You need to have docker and docker-compose installed on your machine.
 
