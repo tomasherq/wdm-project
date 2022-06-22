@@ -137,9 +137,11 @@ responses = defaultdict(lambda: {})
 
 
 def process_before_request(request, serviceNode):
+
     if "Id-request" in request.headers:
         id_request = request.headers["Id-request"]
 
+        # This was not used at the end
         if id_request in responses and responses[id_request]["forward"] is True:
             return response(208, {'status_code': 208, 'message': "The request was already made."})
 
@@ -186,8 +188,13 @@ def process_after_request(returned_response, serviceNode):
                 if len(nodes_down_report) > 0:
                     # If we only have nodes that are down, we do not need to check the consistency
                     serviceNode.reportDownNodes(nodes_down_report)
+
+                # This breaks the whole execution
+
                 # Here the inconsistency is announced to the coordinator
-                if (len(unique_responses) - len(nodes_down_report)) > 1:
-                    serviceNode.sendFixConsistencyMsg(id_request)
+                # if (len(unique_responses)-len(nodes_down_report)) > 1:
+                #     serviceNode.sendFixConsistencyMsg(id_request)
+
+                pass
 
     return returned_response
