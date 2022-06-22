@@ -137,17 +137,6 @@ responses = defaultdict(lambda: {})
 
 
 def process_before_request(request, serviceNode):
-    pass
-
-
-def process_after_request(returned_response, serviceNode):
-
-    # Recovery starts here
-
-    if (serviceNode.isInRecover or serviceNode.collection.is_queue_empty()) is False:
-
-        serviceNode.collection.process_queue()
-
     if "Id-request" in request.headers:
         id_request = request.headers["Id-request"]
 
@@ -168,6 +157,15 @@ def process_after_request(returned_response, serviceNode):
                 print(str(e), file=sys.stdout, flush=True)
 
             responses[id_request]["results"] = results
+
+
+def process_after_request(returned_response, serviceNode):
+
+    # Recovery starts here
+
+    if (serviceNode.isInRecover or serviceNode.collection.is_queue_empty()) is False:
+
+        serviceNode.collection.process_queue()
 
     if "Id-request" in returned_response.headers:
         id_request = returned_response.headers["Id-request"]
