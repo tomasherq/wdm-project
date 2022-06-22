@@ -137,6 +137,16 @@ responses = defaultdict(lambda: {})
 
 
 def process_before_request(request, serviceNode):
+    pass
+
+
+def process_after_request(returned_response, serviceNode):
+
+    # Recovery starts here
+
+    if (serviceNode.isInRecover or serviceNode.collection.is_queue_empty()) is False:
+
+        serviceNode.collection.process_queue()
 
     if "Id-request" in request.headers:
         id_request = request.headers["Id-request"]
@@ -159,15 +169,6 @@ def process_before_request(request, serviceNode):
 
             responses[id_request]["results"] = results
 
-
-def process_after_request(returned_response, serviceNode):
-
-    # Recovery starts here
-
-    if (serviceNode.isInRecover or serviceNode.collection.is_queue_empty()) is False:
-
-        serviceNode.collection.process_queue()
-
     if "Id-request" in returned_response.headers:
         id_request = returned_response.headers["Id-request"]
 
@@ -188,9 +189,8 @@ def process_after_request(returned_response, serviceNode):
                     # If we only have nodes that are down, we do not need to check the consistency
                     serviceNode.reportDownNodes(nodes_down_report)
 
-                if (len(nodes_down_report)-len(unique_responses)) == 1:
+                if len(unique_responses) > len(nodes_down_report):
                     serviceNode.sendFixConsistencyMsg(id_request)
                 # Here the inconsistency is announced to the coordinator
-                pass
 
     return returned_response
